@@ -1,0 +1,110 @@
+Sample Hedra Output
+===================
+
+Example 1: Audit Command (Table Format)
+----------------------------------------
+
+$ hedra audit https://example.com
+
+═══ Security Header Audit ═══
+URL: https://example.com
+Timestamp: 2025-11-12T10:30:00Z
+Security Score: 75/100
+
+Headers Present:
+  content-security-policy: default-src 'self'; script-src 'self' 'unsafe-inline'
+  strict-transport-security: max-age=31536000; includeSubDomains
+  x-content-type-options: nosniff
+
+Findings:
+
+● WARNING
+  • content-security-policy: CSP contains unsafe directives (unsafe-inline or unsafe-eval)
+    Fix: Remove unsafe-inline and unsafe-eval, use nonces or hashes
+  • x-frame-options: X-Frame-Options header is missing
+    Fix: Add X-Frame-Options: DENY or SAMEORIGIN
+
+● INFO
+  • referrer-policy: Referrer-Policy header is missing
+    Fix: Add Referrer-Policy: strict-origin-when-cross-origin
+  • permissions-policy: Permissions-Policy header is missing
+    Fix: Consider adding Permissions-Policy to control browser features
+
+
+Example 2: Audit Command (JSON Format)
+---------------------------------------
+
+$ hedra audit https://example.com --json
+
+{
+  "url": "https://example.com",
+  "timestamp": "2025-11-12T10:30:00Z",
+  "headers": {
+    "content-security-policy": "default-src 'self'; script-src 'self' 'unsafe-inline'",
+    "strict-transport-security": "max-age=31536000; includeSubDomains",
+    "x-content-type-options": "nosniff"
+  },
+  "findings": [
+    {
+      "header": "content-security-policy",
+      "issue": "CSP contains unsafe directives (unsafe-inline or unsafe-eval)",
+      "severity": "warning",
+      "recommended_fix": "Remove unsafe-inline and unsafe-eval, use nonces or hashes"
+    },
+    {
+      "header": "x-frame-options",
+      "issue": "X-Frame-Options header is missing",
+      "severity": "warning",
+      "recommended_fix": "Add X-Frame-Options: DENY or SAMEORIGIN"
+    },
+    {
+      "header": "referrer-policy",
+      "issue": "Referrer-Policy header is missing",
+      "severity": "info",
+      "recommended_fix": "Add Referrer-Policy: strict-origin-when-cross-origin"
+    }
+  ],
+  "score": 75
+}
+
+
+Example 3: Scan Multiple URLs
+------------------------------
+
+$ hedra scan -f urls.txt
+
+https://example.com
+Score: 75/100
+Timestamp: 2025-11-12T10:30:00Z
+
+┌─────────────────────────────┬──────────────────────────────┬──────────────┐
+│ Header                      │ Issue                        │ Severity     │
+├─────────────────────────────┼──────────────────────────────┼──────────────┤
+│ x-frame-options             │ Header is missing            │ ● WARNING    │
+│ referrer-policy             │ Header is missing            │ ● INFO       │
+└─────────────────────────────┴──────────────────────────────┴──────────────┘
+
+https://github.com
+Score: 95/100
+Timestamp: 2025-11-12T10:30:05Z
+
+✓ All security headers properly configured
+
+
+Example 4: Compare Headers
+---------------------------
+
+$ hedra compare https://staging.example.com https://prod.example.com
+
+═══ Header Comparison ═══
+URL 1: https://staging.example.com (Score: 65)
+URL 2: https://prod.example.com (Score: 85)
+
+Only in URL 1:
+  - x-debug-mode
+
+Only in URL 2:
+  - strict-transport-security
+  - content-security-policy
+
+Common headers: 5

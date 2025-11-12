@@ -1,0 +1,17 @@
+# Hedra Configuration Example
+# Copy to ~/.hedra/config.yml to customize
+
+# HTTP client settings
+timeout: 10
+concurrency: 10
+follow_redirects: false
+user_agent: "Hedra/1.0.0"
+
+# Proxy settings (optional)
+# proxy: "http://127.0.0.1:8080"
+
+# Output preferences
+output_format: table  # table, json, or csv
+
+# Rate limiting (optional)
+# rate_limit: "5/s"

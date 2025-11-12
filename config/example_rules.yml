@@ -1,0 +1,16 @@
+# Custom security header rules
+# Copy to ~/.hedra/rules.yml to enable
+
+rules:
+  - header: "X-Custom-Security"
+    type: missing
+    severity: warning
+    message: "Custom security header is missing"
+    fix: "Add X-Custom-Security header"
+  
+  - header: "Server"
+    type: pattern
+    pattern: "(Apache|nginx|IIS)"
+    severity: info
+    message: "Server header exposes server software"
+    fix: "Remove or obfuscate Server header"
