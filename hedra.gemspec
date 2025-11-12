@@ -5,11 +5,11 @@ require_relative 'lib/hedra/version'
 Gem::Specification.new do |spec|
   spec.name          = 'hedra'
   spec.version       = Hedra::VERSION
-  spec.authors       = ['Hedra Team']
-  spec.email         = ['team@hedra.dev']
+  spec.authors       = ['BlackStack']
+  spec.email         = ['info@blackstack.com']
   spec.summary       = 'Security header analyzer CLI'
   spec.description   = 'A comprehensive security header analyzer with scanning, auditing, and monitoring capabilities'
-  spec.homepage      = 'https://github.com/hedra/hedra'
+  spec.homepage      = 'https://github.com/bl4ckstack/hedra'
   spec.license       = 'MIT'
   spec.required_ruby_version = '>= 3.0.0'
 

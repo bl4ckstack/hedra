@@ -1,7 +1,7 @@
 # Hedra 🛡️
 
 [![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.0-ruby.svg)](https://www.ruby-lang.org/)
-[![CI](https://github.com/hedra/hedra/workflows/CI/badge.svg)](https://github.com/hedra/hedra/actions)
+[![CI](https://github.com/blackstack/hedra/workflows/CI/badge.svg)](https://github.com/blackstack/hedra/actions)
 [![Gem Version](https://badge.fury.io/rb/hedra.svg)](https://badge.fury.io/rb/hedra)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -142,7 +142,7 @@ hedra plugin list
 
 ```bash
 # Clone and install
-git clone https://github.com/hedra/hedra.git
+git clone https://github.com/blackstack/hedra.git
 cd hedra
 bundle install
 
@@ -212,4 +212,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-Made with ❤️ by the Hedra Team
+Built by [BlackStack](https://github.com/bl4ckstack)
