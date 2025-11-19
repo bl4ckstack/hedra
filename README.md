@@ -1,176 +1,170 @@
 # Hedra
 
-[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.0-ruby.svg)](https://www.ruby-lang.org/)
-[![Gem Version](https://badge.fury.io/rb/hedra.svg)](https://badge.fury.io/rb/hedra)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ruby](https://img.shields.io/badge/Ruby-3.0%2B-CC342D?style=flat&logo=ruby)](https://www.ruby-lang.org/)
+[![Gem Version](https://img.shields.io/gem/v/hedra?style=flat&logo=rubygems&color=E9573F)](https://rubygems.org/gems/hedra)
+[![License](https://img.shields.io/badge/License-MIT-00A98F?style=flat)](LICENSE)
+[![Downloads](https://img.shields.io/gem/dt/hedra?style=flat&color=blue)](https://rubygems.org/gems/hedra)
 
-Security header analyzer for web applications. Scan, audit, and monitor HTTP security headers with support for SSL/TLS validation, baseline tracking, and CI/CD integration.
+> Security header analyzer with SSL/TLS validation, baseline tracking, and CI/CD integration.
 
 ## Installation
-
 ```bash
 gem install hedra
 ```
 
 ## Quick Start
-
 ```bash
-# Scan a URL
-hedra scan https://example.com
-
-# Audit with full checks
-hedra audit https://example.com
-
-# Scan multiple URLs
-hedra scan -f urls.txt
-
-# Generate HTML report
-hedra scan https://example.com --output report.html --format html
+hedra scan https://github.com
+hedra audit https://stripe.com --json
+hedra scan -f urls.txt --format html --output report.html
 ```
 
 ## Commands
 
 ### scan
-Scan one or multiple URLs for security headers.
 
+Scan URLs for security headers with flexible output options.
 ```bash
-hedra scan https://example.com
+hedra scan https://github.com
 hedra scan -f urls.txt --concurrency 20
-hedra scan https://example.com --cache --rate 10/s
+hedra scan https://stripe.com --cache --rate 10/s
 ```
 
-**Options:**
-- `-f, --file` - Read URLs from file
-- `-c, --concurrency N` - Concurrent requests (default: 10)
-- `-t, --timeout N` - Request timeout in seconds (default: 10)
-- `--rate RATE` - Rate limit (e.g., 10/s, 100/m, 1000/h)
-- `--cache` - Enable response caching
-- `--cache-ttl N` - Cache TTL in seconds (default: 3600)
-- `-o, --output FILE` - Output file
-- `--format FORMAT` - Output format: table, json, csv, html (default: table)
-- `--proxy URL` - HTTP/SOCKS proxy
-- `--user-agent STRING` - Custom User-Agent
-- `--save-baseline NAME` - Save results as baseline
-- `--[no-]progress` - Show/hide progress bar
-- `--[no-]check-certificates` - Enable/disable SSL checks (default: enabled)
-- `--[no-]check-security-txt` - Enable/disable security.txt checks
+**Key Options:**
+- `-f, --file FILE` • Read URLs from file
+- `-c, --concurrency N` • Concurrent requests (default: 10)
+- `-t, --timeout N` • Request timeout in seconds (default: 10)
+- `--rate RATE` • Rate limit: 10/s, 100/m, 1000/h
+- `--cache` • Enable response caching
+- `--cache-ttl N` • Cache TTL in seconds (default: 3600)
+- `-o, --output FILE` • Output file
+- `--format FORMAT` • table, json, csv, html (default: table)
+- `--proxy URL` • HTTP/SOCKS proxy
+- `--user-agent STRING` • Custom User-Agent
+- `--save-baseline NAME` • Save results as baseline
+- `--[no-]progress` • Show/hide progress bar
+- `--[no-]check-certificates` • SSL checks (default: enabled)
+- `--[no-]check-security-txt` • RFC 9116 checks
 
 ### audit
-Deep security audit for a single URL.
 
+Deep security audit with detailed recommendations.
 ```bash
-hedra audit https://example.com
-hedra audit https://example.com --json --output report.json
+hedra audit https://github.com
+hedra audit https://api.stripe.com --json --output report.json
 ```
 
 **Options:**
-- `--json` - Output as JSON
-- `-o, --output FILE` - Output file
-- `--proxy URL` - HTTP/SOCKS proxy
-- `--user-agent STRING` - Custom User-Agent
-- `-t, --timeout N` - Request timeout
-- `--[no-]check-certificates` - Enable/disable SSL checks
-- `--[no-]check-security-txt` - Enable/disable security.txt checks
+- `--json` • JSON output format
+- `-o, --output FILE` • Output file
+- `--proxy URL` • HTTP/SOCKS proxy
+- `--user-agent STRING` • Custom User-Agent
+- `-t, --timeout N` • Request timeout
+- `--[no-]check-certificates` • SSL/TLS validation
+- `--[no-]check-security-txt` • security.txt checks
 
 ### watch
-Monitor security headers periodically.
 
+Monitor security headers periodically.
 ```bash
-hedra watch https://example.com --interval 3600
+hedra watch https://myapp.com --interval 3600
 ```
 
 **Options:**
-- `--interval N` - Check interval in seconds (default: 3600)
+- `--interval N` • Check interval in seconds (default: 3600)
 
 ### compare
-Compare security headers between two URLs.
 
+Compare security headers between environments.
 ```bash
-hedra compare https://staging.example.com https://prod.example.com
+hedra compare https://staging.myapp.com https://myapp.com
 ```
 
 ### ci_check
-CI/CD friendly check with exit codes.
 
+CI/CD-friendly check with exit codes and thresholds.
 ```bash
-hedra ci_check https://example.com --threshold 80
+hedra ci_check https://myapp.com --threshold 85
 hedra ci_check -f urls.txt --fail-on-critical
 ```
 
 **Options:**
-- `-f, --file` - Read URLs from file
-- `--threshold N` - Minimum score threshold (default: 80)
-- `--fail-on-critical` - Fail if critical issues found (default: true)
+- `-f, --file FILE` • Read URLs from file
+- `--threshold N` • Minimum score threshold (default: 80)
+- `--fail-on-critical` • Fail on critical issues (default: true)
 
-**Exit codes:**
-- `0` - All checks passed
-- `1` - Checks failed (score below threshold or critical issues)
+**Exit Codes:**
+- `0` • All checks passed
+- `1` • Score below threshold or critical issues found
 
 ### baseline
-Manage security baselines.
 
+Track security posture changes over time.
 ```bash
-# List baselines
 hedra baseline list
-
-# Compare against baseline
 hedra baseline compare production-v1 -f urls.txt
-
-# Delete baseline
 hedra baseline delete production-v1
 ```
 
 ### cache
-Manage response cache.
 
+Manage response cache for faster repeated scans.
 ```bash
-# Clear all cache
 hedra cache clear
-
-# Clear expired entries
 hedra cache clear-expired
 ```
 
 ### plugin
-Manage plugins.
 
+Extend functionality with custom security checks.
 ```bash
-# List plugins
 hedra plugin list
-
-# Install plugin
 hedra plugin install path/to/plugin.rb
-
-# Remove plugin
 hedra plugin remove plugin_name
 ```
 
 ## Security Checks
 
-### HTTP Headers
-- Content-Security-Policy (CSP)
-- Strict-Transport-Security (HSTS)
-- X-Frame-Options
-- X-Content-Type-Options
-- Referrer-Policy
-- Permissions-Policy
-- Cross-Origin-Opener-Policy (COOP)
-- Cross-Origin-Embedder-Policy (COEP)
-- Cross-Origin-Resource-Policy (CORP)
+### HTTP Headers Analyzed
 
-### Additional Checks
-- SSL/TLS certificate expiry and strength
-- Certificate signature algorithms
-- Certificate key size validation
-- security.txt file (RFC 9116)
+| Header | Weight | Purpose |
+|--------|--------|---------|
+| Content-Security-Policy | 25 pts | Prevent XSS and injection attacks |
+| Strict-Transport-Security | 25 pts | Enforce HTTPS connections |
+| X-Frame-Options | 15 pts | Prevent clickjacking |
+| X-Content-Type-Options | 10 pts | Stop MIME-type sniffing |
+| Referrer-Policy | 10 pts | Control referrer information |
+| Permissions-Policy | 5 pts | Manage browser features |
+| Cross-Origin-Opener-Policy | 5 pts | Isolate browsing context |
+| Cross-Origin-Embedder-Policy | 3 pts | Enable cross-origin isolation |
+| Cross-Origin-Resource-Policy | 2 pts | Control resource loading |
+
+### Additional Validations
+
+**SSL/TLS Checks:**
+- Certificate expiry dates
+- Signature algorithm strength
+- Key size validation
+- Chain verification
+
+**RFC 9116:**
+- security.txt file presence and format
+
+### Scoring System
+
+**Base:** 100 points from header weights
+
+**Penalties:**
+- Critical issue: -20 points
+- Warning: -10 points
+- Info: -5 points
 
 ## Configuration
 
-Create `~/.hedra/confiml`:
-
+Create `~/.hedra/config.yml`:
 ```yaml
 # HTTP settings
-timecurity Checks
+timeout: 10
 concurrency: 10
 user_agent: "Hedra/2.0.0"
 follow_redirects: true
@@ -196,42 +190,59 @@ circuit_breaker_timeout: 60
 
 ## Custom Rules
 
-Create `~/.hedra/rules.yml`:
-
+Define organization-specific policies in `~/.hedra/rules.yml`:
 ```yaml
 rules:
-  - header: "X-Custom-Header"
+  - header: "X-Custom-Security"
     type: missing
     severity: warning
-    message: "Custom header is missing"
-    fix: "Add X-Custom-Header to responses"
+    message: "Custom security header is missing"
+    fix: "Add X-Custom-Security: enabled"
+    
+  - header: "Server"
+    type: pattern
+    pattern: "^(Apache|nginx)"
+    severity: info
+    message: "Server header exposes software version"
+    fix: "Remove or obfuscate Server header"
 ```
 
-**Rule types:**
-- `missing` - Check if header is absent
-- `pattern` - Match header value against regex pattern
+**Rule Types:**
+- `missing` • Header should be present
+- `pattern` • Header value must match regex
 
-**Severity levels:**
-- `critical` - Critical security issue (-20 points)
-- `warning` - Warning (-10 points)
-- `info` - Informational (-5 points)
+**Severity Levels:**
+- `critical` • -20 points, immediate action required
+- `warning` • -10 points, should be addressed
+- `info` • -5 points, best practice
 
-## Plugins
+## Plugin System
 
-Create custom plugins in `~/.hedra/plugins/`:
-
+Create custom checks in `~/.hedra/plugins/`:
 ```ruby
+# ~/.hedra/plugins/corporate_policy.rb
 module Hedra
-  class MyPlugin < Plugin
+  class CorporatePolicyPlugin < Plugin
     def self.check(headers)
       findings = []
       
-      unless headers.key?('x-custom-header')
+      # Enforce corporate header
+      unless headers.key?('x-corp-security')
         findings << {
-          header: 'x-custom-header',
-          issue: 'Custom header missing',
+          header: 'x-corp-security',
+          issue: 'Corporate security header missing',
+          severity: :critical,
+          recommended_fix: 'Add X-Corp-Security: v2'
+        }
+      end
+      
+      # Check version disclosure
+      if headers['server']&.match?(/\d+\.\d+/)
+        findings << {
+          header: 'server',
+          issue: 'Server version exposed',
           severity: :warning,
-          recommended_fix: 'Add X-Custom-Header'
+          recommended_fix: 'Remove version from Server header'
         }
       end
       
@@ -241,17 +252,23 @@ module Hedra
 end
 ```
 
+**Management:**
+```bash
+hedra plugin install ~/.hedra/plugins/corporate_policy.rb
+hedra plugin list
+hedra plugin remove corporate_policy
+```
+
 ## CI/CD Integration
 
 ### GitHub Actions
-
 ```yaml
-name: Security Headers
+name: Security Headers Check
 
 on: [push, pull_request]
 
 jobs:
-  security:
+  security-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -264,10 +281,10 @@ jobs:
       - name: Install Hedra
         run: gem install hedra
       
-      - name: Security Check
+      - name: Run Security Check
         run: hedra ci_check ${{ secrets.APP_URL }} --threshold 85
       
-      - name: Generate Report
+      - name: Generate HTML Report
         if: always()
         run: hedra scan ${{ secrets.APP_URL }} --output report.html --format html
       
@@ -280,121 +297,207 @@ jobs:
 ```
 
 ### GitLab CI
-
 ```yaml
 security_headers:
   image: ruby:3.2
   script:
     - gem install hedra
-    - hedra ci_check $APP_URL --threshold 85 --output report.json --format json
+    - hedra ci_check $APP_URL --threshold 85
+    - hedra scan $APP_URL --output report.json --format json
   artifacts:
     reports:
       junit: report.json
     paths:
       - report.json
+  only:
+    - merge_requests
+    - main
+```
+
+### Jenkins Pipeline
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Security Headers') {
+            steps {
+                sh 'gem install hedra'
+                sh 'hedra ci_check ${APP_URL} --threshold 85'
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'hedra scan ${APP_URL} --output report.html --format html'
+            publishHTML([
+                reportDir: '.',
+                reportFiles: 'report.html',
+                reportName: 'Security Report'
+            ])
+        }
+    }
+}
 ```
 
 ## Export Formats
 
+### Table (Default)
+```bash
+hedra scan https://github.com
+```
+
+Clean, colored terminal output with scores and recommendations.
+
 ### JSON
 ```bash
-hedra scan https://example.com --output report.json --format json
+hedra scan https://stripe.com --output report.json --format json
 ```
+
+Structured data for automation and parsing.
 
 ### CSV
 ```bash
 hedra scan -f urls.txt --output report.csv --format csv
 ```
 
+Import into spreadsheets for analysis and tracking.
+
 ### HTML
 ```bash
 hedra scan -f urls.txt --output report.html --format html
 ```
 
-## Scoring
+Interactive report with sorting, filtering, and charts.
 
-Headers are weighted by importance (total: 100 points):
+## Real-World Examples
 
-| Header | Weight |
-|--------|--------|
-| Content-Security-Policy | 25 |
-| Strict-Transport-Security | 25 |
-| X-Frame-Options | 15 |
-| X-Content-Type-Options | 10 |
-| Referrer-Policy | 10 |
-| Permissions-Policy | 5 |
-| Cross-Origin-Opener-Policy | 5 |
-| Cross-Origin-Embedder-Policy | 3 |
-| Cross-Origin-Resource-Policy | 2 |
-
-Penalties:
-- Critical issue: -20 points
-- Warning: -10 points
-- Info: -5 points
-
-## Examples
-
-### Basic Usage
+### Basic Security Audit
 ```bash
-# Single URL
-hedra scan https://example.com
-
-# Multiple URLs with concurrency
-hedra scan -f urls.txt --concurrency 20
-
-# With caching
-hedra scan -f urls.txt --cache --cache-ttl 7200
+hedra scan https://myapp.com
 ```
 
-### Rate Limiting
+### Production Deployment Check
 ```bash
-# 10 requests per second
-hedra scan -f urls.txt --rate 10/s
+# Save baseline after deployment
+hedra scan -f production-urls.txt --save-baseline prod-v2.1.0
 
-# 100 requests per minute
-hedra scan -f urls.txt --rate 100/m
+# Compare before next deployment
+hedra baseline compare prod-v2.1.0 -f production-urls.txt
 ```
 
-### Baseline Tracking
+### High-Volume Scanning
 ```bash
-# Save baseline
-hedra scan -f urls.txt --save-baseline prod-v1
-
-# Compare later
-hedra baseline compare prod-v1 -f urls.txt
+# Scan 1000 URLs with rate limiting and caching
+hedra scan -f large-list.txt \
+  --concurrency 50 \
+  --rate 20/s \
+  --cache \
+  --output results.json \
+  --format json
 ```
 
-### Proxy Usage
+### Continuous Monitoring
 ```bash
-hedra scan https://example.com --proxy http://127.0.0.1:8080
+# Check every hour
+hedra watch https://api.myapp.com --interval 3600
+```
+
+### Environment Comparison
+```bash
+hedra compare https://staging.myapp.com https://myapp.com
+```
+
+### Proxy-Based Testing
+```bash
+# Route through Burp Suite
+hedra scan https://target.com --proxy http://127.0.0.1:8080
 ```
 
 ### Custom User-Agent
 ```bash
-hedra scan https://example.com --user-agent "MyScanner/1.0"
+hedra scan https://myapp.com --user-agent "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0)"
+```
+
+## Performance Tuning
+
+### Caching Strategy
+```bash
+# Enable caching for repeated scans
+hedra scan -f urls.txt --cache --cache-ttl 7200
+
+# Clear cache when needed
+hedra cache clear
+```
+
+### Rate Limiting
+```bash
+# Conservative approach
+hedra scan -f urls.txt --rate 10/s --concurrency 5
+
+# Aggressive scanning
+hedra scan -f urls.txt --rate 100/s --concurrency 50
+```
+
+### Timeout Configuration
+```bash
+# Fast scan for responsive servers
+hedra scan -f urls.txt --timeout 5
+
+# Patient scan for slow servers
+hedra scan -f urls.txt --timeout 30
 ```
 
 ## Development
-
 ```bash
+# Clone and setup
 git clone https://github.com/blackstack/hedra.git
 cd hedra
 bundle install
+
+# Run tests
 bundle exec rspec
+
+# Check code style
 bundle exec rubocop
+
+# Build gem
 rake build
+gem install pkg/hedra-*.gem
 ```
+
+## Troubleshooting
+
+### SSL Certificate Errors
+```bash
+# Skip certificate validation
+hedra scan https://self-signed.badssl.com --no-check-certificates
+```
+
+### Rate Limiting Issues
+```bash
+# Reduce load on target server
+hedra scan -f urls.txt --concurrency 1 --rate 1/s
+```
+
+### Timeout Problems
+```bash
+# Increase timeout for slow servers
+hedra scan https://slow-server.com --timeout 60
+```
+
+## Resources
+
+**GitHub:** https://github.com/blackstack/hedra  
+**RubyGems:** https://rubygems.org/gems/hedra  
+**Issues:** https://github.com/blackstack/hedra/issues  
+**OWASP Headers:** https://owasp.org/www-project-secure-headers/
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
-
-## Links
-
-- **GitHub**: https://github.com/blackstack/hedra
-- **RubyGems**: https://rubygems.org/gems/hedra
-- **Issues**: https://github.com/blackstack/hedra/issues
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-Built by [BlackStack](https://github.com/blackstack)
+**Built by [BlackStack](https://github.com/blackstack)** • Securing the web, one header at a time.
