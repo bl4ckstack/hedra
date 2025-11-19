@@ -1,7 +1,6 @@
 # Hedra 🛡️
 
 [![Ruby](https://img.shields.io/badge/Ruby-3.0%2B-CC342D?style=flat&logo=ruby)](https://www.ruby-lang.org/)
-[![CI](https://img.shields.io/github/actions/workflow/status/blackstack/hedra/ci.yml?style=flat&logo=github)](https://github.com/blackstack/hedra/actions)
 [![Gem Version](https://img.shields.io/gem/v/hedra?style=flat&logo=rubygems&color=E9573F)](https://rubygems.org/gems/hedra)
 [![License](https://img.shields.io/badge/License-MIT-00A98F?style=flat)](LICENSE)
 [![Downloads](https://img.shields.io/gem/dt/hedra?style=flat&color=blue)](https://rubygems.org/gems/hedra)
