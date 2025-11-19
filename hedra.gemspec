@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'csv', '~> 3.2'
   spec.add_dependency 'http', '~> 5.1'
+  spec.add_dependency 'openssl', '>= 3.1.2'
   spec.add_dependency 'pastel', '~> 0.8'
   spec.add_dependency 'thor', '~> 1.2'
   spec.add_dependency 'tty-table', '~> 0.12'
