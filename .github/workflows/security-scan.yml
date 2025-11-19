@@ -1,0 +1,96 @@
+name: Security Header Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Install Hedra
+        run: gem install hedra
+
+      - name: Run security header scan
+        run: |
+          hedra ci-check ${{ secrets.APP_URL || 'https://example.com' }} \
+            --threshold 80 \
+            --fail-on-critical \
+            --output scan-results.json \
+            --format json
+
+      - name: Generate HTML report
+        if: always()
+        run: |
+          hedra scan ${{ secrets.APP_URL || 'https://example.com' }} \
+            --output security-report.html \
+            --format html
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-scan-results
+          path: |
+            scan-results.json
+            security-report.html
+
+      - name: Compare with baseline
+        if: github.event_name == 'pull_request'
+        run: |
+          # Download baseline from main branch
+          git fetch origin main
+          git checkout origin/main -- baseline.json || echo "No baseline found"
+          
+          if [ -f baseline.json ]; then
+            hedra baseline compare production scan-results.json
+          fi
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('scan-results.json', 'utf8'));
+            
+            let comment = '## 🛡️ Security Header Scan Results\n\n';
+            results.forEach(result => {
+              comment += `### ${result.url}\n`;
+              comment += `**Score:** ${result.score}/100\n\n`;
+              
+              if (result.findings.length > 0) {
+                comment += '**Findings:**\n';
+                result.findings.forEach(finding => {
+                  const emoji = finding.severity === 'critical' ? '🔴' : 
+                               finding.severity === 'warning' ? '🟡' : '🔵';
+                  comment += `- ${emoji} **${finding.header}**: ${finding.issue}\n`;
+                });
+              } else {
+                comment += '✅ All security headers properly configured\n';
+              }
+              comment += '\n';
+            });
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

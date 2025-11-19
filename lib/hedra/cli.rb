@@ -42,6 +42,110 @@ module Hedra
     end
   end
 
+  class BaselineCLI < Thor
+    desc 'list', 'List saved baselines'
+    def list
+      baseline = Baseline.new
+      baselines = baseline.list
+
+      if baselines.empty?
+        puts 'No baselines saved.'
+      else
+        puts 'Saved baselines:'
+        baselines.each do |b|
+          puts "  - #{b[:name]} (#{b[:url_count]} URLs, created: #{b[:created_at]})"
+        end
+      end
+    end
+
+    desc 'compare NAME URL_OR_FILE', 'Compare current results against baseline'
+    option :file, type: :boolean, aliases: '-f', desc: 'Treat argument as file with URLs'
+    option :output, type: :string, aliases: '-o', desc: 'Output file'
+    def compare(name, target)
+      baseline = Baseline.new
+      urls = options[:file] ? File.readlines(target).map(&:strip).reject(&:empty?) : [target]
+
+      client = HttpClient.new
+      analyzer = Analyzer.new
+      current_results = []
+
+      urls.each do |url|
+        response = client.get(url)
+        result = analyzer.analyze(url, response.headers.to_h)
+        current_results << result
+      rescue StandardError => e
+        warn "Failed to scan #{url}: #{e.message}"
+      end
+
+      comparisons = baseline.compare(name, current_results)
+      print_comparisons(comparisons)
+
+      if options[:output]
+        File.write(options[:output], JSON.pretty_generate(comparisons))
+        puts "Comparison saved to #{options[:output]}"
+      end
+    rescue StandardError => e
+      warn "Comparison failed: #{e.message}"
+      exit 1
+    end
+
+    desc 'delete NAME', 'Delete a baseline'
+    def delete(name)
+      baseline = Baseline.new
+      baseline.delete(name)
+      puts "Baseline deleted: #{name}"
+    rescue StandardError => e
+      warn "Failed to delete baseline: #{e.message}"
+      exit 1
+    end
+
+    private
+
+    def print_comparisons(comparisons)
+      pastel = Pastel.new
+
+      comparisons.each do |comp|
+        puts "\n#{pastel.bold(comp[:url])}"
+        puts "Baseline Score: #{comp[:baseline_score]} | Current Score: #{comp[:current_score]}"
+        
+        change = comp[:score_change]
+        if change > 0
+          puts pastel.green("Score improved by #{change} points")
+        elsif change < 0
+          puts pastel.red("Score decreased by #{change.abs} points")
+        else
+          puts "Score unchanged"
+        end
+
+        if comp[:new_findings].any?
+          puts pastel.yellow("\nNew findings:")
+          comp[:new_findings].each { |f| puts "  - #{f[:header]}: #{f[:issue]}" }
+        end
+
+        if comp[:resolved_findings].any?
+          puts pastel.green("\nResolved findings:")
+          comp[:resolved_findings].each { |f| puts "  - #{f[:header]}: #{f[:issue]}" }
+        end
+      end
+    end
+  end
+
+  class CacheCLI < Thor
+    desc 'clear', 'Clear response cache'
+    def clear
+      cache = Cache.new
+      cache.clear
+      puts 'Cache cleared.'
+    end
+
+    desc 'clear-expired', 'Clear expired cache entries'
+    def clear_expired
+      cache = Cache.new
+      cache.clear_expired
+      puts 'Expired cache entries cleared.'
+    end
+  end
+
   class CLI < Thor
     class_option :verbose, type: :boolean, aliases: '-v', desc: 'Verbose output'
     class_option :quiet, type: :boolean, aliases: '-q', desc: 'Quiet mode'
@@ -60,22 +164,67 @@ module Hedra
     option :user_agent, type: :string, desc: 'Custom User-Agent header'
     option :follow_redirects, type: :boolean, default: true, desc: 'Follow redirects'
     option :output, type: :string, aliases: '-o', desc: 'Output file'
-    option :format, type: :string, default: 'table', desc: 'Output format (table, json, csv)'
+    option :format, type: :string, default: 'table', desc: 'Output format (table, json, csv, html)'
+    option :cache, type: :boolean, default: false, desc: 'Enable response caching'
+    option :cache_ttl, type: :numeric, default: 3600, desc: 'Cache TTL in seconds'
+    option :check_certificates, type: :boolean, default: true, desc: 'Check SSL certificates'
+    option :check_security_txt, type: :boolean, default: false, desc: 'Check for security.txt'
+    option :save_baseline, type: :string, desc: 'Save results as baseline'
+    option :progress, type: :boolean, default: true, desc: 'Show progress bar'
     def scan(target)
       setup_logging
       urls = options[:file] ? read_urls_from_file(target) : [target]
 
       client = build_http_client
-      analyzer = Analyzer.new
+      analyzer = Analyzer.new(
+        check_certificates: options[:check_certificates],
+        check_security_txt: options[:check_security_txt]
+      )
+      cache = options[:cache] ? Cache.new(ttl: options[:cache_ttl]) : nil
+      rate_limiter = options[:rate] ? RateLimiter.new(options[:rate]) : nil
+      circuit_breakers = {}
       results = []
 
+      progress = options[:progress] && !options[:quiet] ? ProgressTracker.new(urls.length, quiet: options[:quiet]) : nil
+
       with_concurrency(urls, options[:concurrency]) do |url|
-        response = client.get(url)
-        result = analyzer.analyze(url, response.headers.to_h)
-        results << result
-        print_result(result) unless options[:quiet] || options[:output]
-      rescue StandardError => e
-        log_error("Failed to scan #{url}: #{e.message}")
+        rate_limiter&.acquire
+
+        # Get or create circuit breaker for this domain
+        domain = URI.parse(url).host
+        circuit_breakers[domain] ||= CircuitBreaker.new
+
+        begin
+          circuit_breakers[domain].call do
+            # Check cache first
+            cached = cache&.get(url)
+            if cached
+              result = cached
+              log_info("Cache hit: #{url}") if @verbose
+            else
+              response = client.get(url)
+              result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+              cache&.set(url, result)
+            end
+
+            results << result
+            print_result(result) unless options[:quiet] || options[:output]
+          end
+        rescue CircuitOpenError
+          log_error("Circuit breaker open for #{domain}, skipping #{url}")
+        rescue StandardError => e
+          log_error("Failed to scan #{url}: #{e.message}")
+        ensure
+          progress&.increment
+        end
+      end
+
+      progress&.finish
+
+      if options[:save_baseline]
+        baseline = Baseline.new
+        baseline.save(options[:save_baseline], results)
+        say "Baseline saved: #{options[:save_baseline]}", :green unless options[:quiet]
       end
 
       export_results(results) if options[:output]
@@ -87,14 +236,19 @@ module Hedra
     option :proxy, type: :string, desc: 'HTTP/SOCKS proxy URL'
     option :user_agent, type: :string, desc: 'Custom User-Agent header'
     option :timeout, type: :numeric, aliases: '-t', default: 10, desc: 'Request timeout'
+    option :check_certificates, type: :boolean, default: true, desc: 'Check SSL certificates'
+    option :check_security_txt, type: :boolean, default: true, desc: 'Check for security.txt'
     def audit(url)
       setup_logging
       client = build_http_client
-      analyzer = Analyzer.new
+      analyzer = Analyzer.new(
+        check_certificates: options[:check_certificates],
+        check_security_txt: options[:check_security_txt]
+      )
 
       begin
         response = client.get(url)
-        result = analyzer.analyze(url, response.headers.to_h)
+        result = analyzer.analyze(url, response.headers.to_h, http_client: client)
 
         if options[:json]
           output = JSON.pretty_generate(result)
@@ -176,6 +330,55 @@ module Hedra
 
     desc 'plugin SUBCOMMAND', 'Manage plugins'
     subcommand 'plugin', Hedra::PluginCLI
+
+    desc 'baseline SUBCOMMAND', 'Manage security baselines'
+    subcommand 'baseline', Hedra::BaselineCLI
+
+    desc 'cache SUBCOMMAND', 'Manage response cache'
+    subcommand 'cache', Hedra::CacheCLI
+
+    desc 'ci-check URL_OR_FILE', 'CI/CD friendly check (exit code based on score threshold)'
+    option :file, type: :boolean, aliases: '-f', desc: 'Treat argument as file with URLs'
+    option :threshold, type: :numeric, default: 80, desc: 'Minimum score threshold'
+    option :fail_on_critical, type: :boolean, default: true, desc: 'Fail if critical issues found'
+    def ci_check(target)
+      setup_logging
+      urls = options[:file] ? read_urls_from_file(target) : [target]
+
+      client = build_http_client
+      analyzer = Analyzer.new
+      results = []
+      failed = false
+
+      urls.each do |url|
+        begin
+          response = client.get(url)
+          result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+          results << result
+
+          if result[:score] < options[:threshold]
+            say "FAIL: #{url} - Score #{result[:score]} below threshold #{options[:threshold]}", :red
+            failed = true
+          end
+
+          if options[:fail_on_critical] && result[:findings].any? { |f| f[:severity] == :critical }
+            say "FAIL: #{url} - Critical security issues found", :red
+            failed = true
+          end
+        rescue StandardError => e
+          log_error("Failed to check #{url}: #{e.message}")
+          failed = true
+        end
+      end
+
+      if failed
+        say "\nCI check failed", :red
+        exit 1
+      else
+        say "\nCI check passed", :green
+        exit 0
+      end
+    end
 
     private
 
@@ -293,6 +496,12 @@ module Hedra
       exporter = Exporter.new
       exporter.export(results, format, options[:output])
       say "Results exported to #{options[:output]}", :green unless options[:quiet]
+    end
+
+    def log_info(message)
+      return unless @verbose
+
+      puts Pastel.new.cyan("INFO: #{message}")
     end
 
     def severity_badge(severity)

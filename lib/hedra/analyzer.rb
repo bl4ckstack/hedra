@@ -61,13 +61,15 @@ module Hedra
       }
     }.freeze
 
-    def initialize
+    def initialize(check_certificates: true, check_security_txt: false)
       @plugin_manager = PluginManager.new
       @scorer = Scorer.new
+      @certificate_checker = check_certificates ? CertificateChecker.new : nil
+      @security_txt_checker = check_security_txt ? SecurityTxtChecker.new : nil
       load_custom_rules
     end
 
-    def analyze(url, headers)
+    def analyze(url, headers, http_client: nil)
       normalized_headers = normalize_headers(headers)
       findings = []
 
@@ -93,6 +95,16 @@ module Hedra
 
       # Run plugin checks
       findings.concat(@plugin_manager.run_checks(normalized_headers))
+
+      # Check SSL certificate
+      if @certificate_checker
+        findings.concat(@certificate_checker.check(url))
+      end
+
+      # Check security.txt
+      if @security_txt_checker && http_client
+        findings.concat(@security_txt_checker.check(url, http_client))
+      end
 
       # Calculate security score
       score = @scorer.calculate(normalized_headers, findings)

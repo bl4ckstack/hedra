@@ -11,6 +11,8 @@ module Hedra
         export_json(results, output_file)
       when 'csv'
         export_csv(results, output_file)
+      when 'html'
+        export_html(results, output_file)
       else
         raise Error, "Unsupported format: #{format}"
       end
@@ -44,6 +46,11 @@ module Hedra
           end
         end
       end
+    end
+
+    def export_html(results, output_file)
+      reporter = HtmlReporter.new
+      reporter.generate(results, output_file)
     end
   end
 end

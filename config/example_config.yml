@@ -1,17 +1,95 @@
-# Hedra Configuration Example
-# Copy to ~/.hedra/config.yml to customize
+# Hedra Configuration File
+# Place this file at ~/.hedra/config.yml
 
-# HTTP client settings
+# ============================================
+# HTTP Client Settings
+# ============================================
+
+# Request timeout in seconds
 timeout: 10
-concurrency: 10
-follow_redirects: false
-user_agent: "Hedra/1.0.0"
 
-# Proxy settings (optional)
+# Number of concurrent requests for batch operations
+concurrency: 10
+
+# Custom User-Agent header
+user_agent: "Hedra/2.0.0 Security Scanner"
+
+# Follow HTTP redirects automatically
+follow_redirects: true
+
+# Maximum number of retry attempts for failed requests
+max_retries: 3
+
+# ============================================
+# Proxy Settings (optional)
+# ============================================
+
+# HTTP/HTTPS/SOCKS proxy URL
+# Uncomment to use a proxy
 # proxy: "http://127.0.0.1:8080"
 
-# Output preferences
-output_format: table  # table, json, or csv
+# ============================================
+# Cache Settings
+# ============================================
 
-# Rate limiting (optional)
-# rate_limit: "5/s"
+# Enable response caching to speed up repeated scans
+cache_enabled: false
+
+# Cache time-to-live in seconds (1 hour = 3600)
+cache_ttl: 3600
+
+# ============================================
+# Security Check Settings
+# ============================================
+
+# Check SSL/TLS certificate validity and strength
+check_certificates: true
+
+# Check for security.txt file (RFC 9116)
+check_security_txt: false
+
+# ============================================
+# Output Settings
+# ============================================
+
+# Default output format: table, json, csv, html
+output_format: "table"
+
+# Show progress bars for batch operations
+progress_bar: true
+
+# ============================================
+# Rate Limiting (optional)
+# ============================================
+
+# Limit request rate to prevent server overload
+# Format: number/period where period is s (second), m (minute), or h (hour)
+# Examples: "10/s", "100/m", "1000/h"
+# Uncomment to enable
+# rate_limit: "10/s"
+
+# ============================================
+# Circuit Breaker Settings
+# ============================================
+
+# Number of failures before circuit opens
+circuit_breaker_threshold: 5
+
+# Timeout in seconds before attempting to close circuit
+circuit_breaker_timeout: 60
+
+# ============================================
+# Scoring Weights (optional)
+# ============================================
+
+# Customize header importance weights (default shown)
+# scoring:
+#   content-security-policy: 25
+#   strict-transport-security: 25
+#   x-frame-options: 15
+#   x-content-type-options: 10
+#   referrer-policy: 10
+#   permissions-policy: 5
+#   cross-origin-opener-policy: 5
+#   cross-origin-embedder-policy: 3
+#   cross-origin-resource-policy: 2
