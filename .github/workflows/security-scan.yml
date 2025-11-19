@@ -33,7 +33,7 @@ jobs:
 
       - name: Run security header scan
         run: |
-          hedra ci_check ${{ secrets.APP_URL || 'https://example.com' }} \
+          hedra ci_check ${{ secrets.APP_URL || 'https://github.com' }} \
             --threshold 80 \
             --fail-on-critical \
             --output scan-results.json \
@@ -42,7 +42,7 @@ jobs:
       - name: Generate HTML report
         if: always()
         run: |
-          hedra scan ${{ secrets.APP_URL || 'https://example.com' }} \
+          hedra scan ${{ secrets.APP_URL || 'https://github.com' }} \
             --output security-report.html \
             --format html
 
