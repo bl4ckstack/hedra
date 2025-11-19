@@ -11,7 +11,7 @@ module Hedra
     DEFAULT_CONFIG = {
       'timeout' => 10,
       'concurrency' => 10,
-      'follow_redirects' => false,
+      'follow_redirects' => true,
       'user_agent' => "Hedra/#{VERSION}",
       'proxy' => nil,
       'output_format' => 'table'

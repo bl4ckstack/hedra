@@ -46,14 +46,27 @@ RSpec.describe Hedra::HttpClient do
     end
 
     context 'with redirects' do
-      it 'does not follow redirects by default' do
+      it 'follows redirects by default' do
+        stub_request(:get, 'https://example.com')
+          .to_return(status: 301, headers: { 'Location' => 'https://example.org' })
+
+        stub_request(:get, 'https://example.org')
+          .to_return(status: 200)
+
+        response = client.get('https://example.com')
+        expect(response.status.success?).to be true
+      end
+
+      it 'does not follow redirects when disabled' do
+        client = described_class.new(follow_redirects: false)
+
         stub_request(:get, 'https://example.com')
           .to_return(status: 301, headers: { 'Location' => 'https://example.org' })
 
         expect { client.get('https://example.com') }.to raise_error(Hedra::NetworkError, /301/)
       end
 
-      it 'follows redirects when enabled' do
+      it 'follows redirects when explicitly enabled' do
         client = described_class.new(follow_redirects: true)
 
         stub_request(:get, 'https://example.com')

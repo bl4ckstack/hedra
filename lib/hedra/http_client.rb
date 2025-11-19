@@ -9,7 +9,7 @@ module Hedra
     MAX_RETRIES = 3
     RETRY_DELAY = 1
 
-    def initialize(timeout: 10, proxy: nil, user_agent: nil, follow_redirects: false, verbose: false)
+    def initialize(timeout: 10, proxy: nil, user_agent: nil, follow_redirects: true, verbose: false)
       @timeout = timeout
       @proxy = proxy
       @user_agent = user_agent || DEFAULT_USER_AGENT
@@ -32,7 +32,9 @@ module Hedra
           return get(location)
         end
 
-        raise NetworkError, "HTTP #{response.status}: #{response.status.reason}" unless response.status.success?
+        unless response.status.success? || (@follow_redirects && response.status.redirect?)
+          raise NetworkError, "HTTP #{response.status}: #{response.status.reason}"
+        end
 
         log "Success: #{response.status}"
         response

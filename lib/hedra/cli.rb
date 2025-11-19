@@ -58,7 +58,7 @@ module Hedra
     option :rate, type: :string, desc: 'Rate limit (e.g., 5/s)'
     option :proxy, type: :string, desc: 'HTTP/SOCKS proxy URL'
     option :user_agent, type: :string, desc: 'Custom User-Agent header'
-    option :follow_redirects, type: :boolean, default: false, desc: 'Follow redirects'
+    option :follow_redirects, type: :boolean, default: true, desc: 'Follow redirects'
     option :output, type: :string, aliases: '-o', desc: 'Output file'
     option :format, type: :string, default: 'table', desc: 'Output format (table, json, csv)'
     def scan(target)
@@ -190,7 +190,7 @@ module Hedra
         timeout: options[:timeout] || 10,
         proxy: options[:proxy],
         user_agent: options[:user_agent],
-        follow_redirects: options[:follow_redirects] || false,
+        follow_redirects: options.key?(:follow_redirects) ? options[:follow_redirects] : true,
         verbose: @verbose
       )
     end
