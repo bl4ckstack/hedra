@@ -1,11 +1,14 @@
 # Hedra 🛡️
 
-[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.0-ruby.svg)](https://www.ruby-lang.org/)
-[![CI](https://github.com/blackstack/hedra/workflows/CI/badge.svg)](https://github.com/bl4ckstack/hedra/actions)
-[![Gem Version](https://badge.fury.io/rb/hedra.svg)](https://badge.fury.io/rb/hedra)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ruby](https://img.shields.io/badge/Ruby-3.0%2B-CC342D?style=flat&logo=ruby)](https://www.ruby-lang.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/blackstack/hedra/ci.yml?style=flat&logo=github)](https://github.com/blackstack/hedra/actions)
+[![Gem Version](https://img.shields.io/gem/v/hedra?style=flat&logo=rubygems&color=E9573F)](https://rubygems.org/gems/hedra)
+[![License](https://img.shields.io/badge/License-MIT-00A98F?style=flat)](LICENSE)
+[![Downloads](https://img.shields.io/gem/dt/hedra?style=flat&color=blue)](https://rubygems.org/gems/hedra)
+[![Maintainability](https://img.shields.io/codeclimate/maintainability/blackstack/hedra?style=flat&logo=codeclimate)](https://codeclimate.com/github/blackstack/hedra)
 
-Security header analyzer for web applications.
+> Enterprise-grade security header analyzer with monitoring, plugins, and multi-format reporting.
+
 
 ## Installation
 
