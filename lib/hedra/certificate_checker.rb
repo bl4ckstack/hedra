@@ -20,7 +20,7 @@ module Hedra
 
       # Check expiry
       days_until_expiry = ((cert_info[:not_after] - Time.now) / 86_400).to_i
-      if days_until_expiry < 0
+      if days_until_expiry.negative?
         findings << {
           header: 'ssl-certificate',
           issue: 'SSL certificate has expired',

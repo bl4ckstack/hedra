@@ -32,8 +32,8 @@ module Hedra
       percentage = (@current.to_f / @total * 100).round(1)
       bar_width = 40
       filled = (bar_width * @current / @total).round
-      bar = '█' * filled + '░' * (bar_width - filled)
-      
+      bar = ('█' * filled) + ('░' * (bar_width - filled))
+
       elapsed = Time.now - @start_time
       rate = @current / elapsed
       eta = (@total - @current) / rate

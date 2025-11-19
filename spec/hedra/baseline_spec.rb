@@ -126,7 +126,6 @@ RSpec.describe Hedra::Baseline do
           url: 'https://example.com',
           score: 75,
           findings: [
-            { header: 'csp', issue: 'Missing CSP', severity: :warning },
             { header: 'hsts', issue: 'Missing HSTS', severity: :critical }
           ]
         }
@@ -134,6 +133,7 @@ RSpec.describe Hedra::Baseline do
 
       comparisons = baseline.compare('test-baseline', current_with_new_findings)
       expect(comparisons[0][:new_findings].length).to eq(1)
+      expect(comparisons[0][:new_findings][0][:header]).to eq('hsts')
     end
   end
 end

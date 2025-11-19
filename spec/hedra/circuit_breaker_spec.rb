@@ -21,11 +21,9 @@ RSpec.describe Hedra::CircuitBreaker do
     context 'when failures occur' do
       it 'counts failures' do
         2.times do
-          begin
-            circuit_breaker.call { raise StandardError, 'failure' }
-          rescue StandardError
-            # Expected
-          end
+          circuit_breaker.call { raise StandardError, 'failure' }
+        rescue StandardError
+          # Expected
         end
 
         expect(circuit_breaker.failure_count).to eq(2)
@@ -33,11 +31,9 @@ RSpec.describe Hedra::CircuitBreaker do
 
       it 'opens circuit after threshold failures' do
         3.times do
-          begin
-            circuit_breaker.call { raise StandardError, 'failure' }
-          rescue StandardError
-            # Expected
-          end
+          circuit_breaker.call { raise StandardError, 'failure' }
+        rescue StandardError
+          # Expected
         end
 
         expect(circuit_breaker).to be_open
@@ -45,11 +41,9 @@ RSpec.describe Hedra::CircuitBreaker do
 
       it 'raises CircuitOpenError when circuit is open' do
         3.times do
-          begin
-            circuit_breaker.call { raise StandardError, 'failure' }
-          rescue StandardError
-            # Expected
-          end
+          circuit_breaker.call { raise StandardError, 'failure' }
+        rescue StandardError
+          # Expected
         end
 
         expect { circuit_breaker.call { 'test' } }.to raise_error(Hedra::CircuitOpenError)
@@ -60,11 +54,9 @@ RSpec.describe Hedra::CircuitBreaker do
       before do
         # Open the circuit
         3.times do
-          begin
-            circuit_breaker.call { raise StandardError, 'failure' }
-          rescue StandardError
-            # Expected
-          end
+          circuit_breaker.call { raise StandardError, 'failure' }
+        rescue StandardError
+          # Expected
         end
 
         # Wait for timeout
@@ -97,11 +89,9 @@ RSpec.describe Hedra::CircuitBreaker do
       it 'resets failure count after success' do
         # Cause some failures
         2.times do
-          begin
-            circuit_breaker.call { raise StandardError, 'failure' }
-          rescue StandardError
-            # Expected
-          end
+          circuit_breaker.call { raise StandardError, 'failure' }
+        rescue StandardError
+          # Expected
         end
 
         expect(circuit_breaker.failure_count).to eq(2)
@@ -120,11 +110,9 @@ RSpec.describe Hedra::CircuitBreaker do
 
     it 'transitions to open after failures' do
       3.times do
-        begin
-          circuit_breaker.call { raise StandardError, 'failure' }
-        rescue StandardError
-          # Expected
-        end
+        circuit_breaker.call { raise StandardError, 'failure' }
+      rescue StandardError
+        # Expected
       end
 
       expect(circuit_breaker.state).to eq(:open)

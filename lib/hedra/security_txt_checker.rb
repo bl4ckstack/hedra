@@ -10,22 +10,20 @@ module Hedra
 
     def check(url, http_client)
       uri = URI.parse(url)
-      base_url = "#{uri.scheme}://#{uri.host}#{uri.port && ![80, 443].include?(uri.port) ? ":#{uri.port}" : ''}"
+      base_url = "#{uri.scheme}://#{uri.host}#{":#{uri.port}" if uri.port && ![80, 443].include?(uri.port)}"
 
       findings = []
       found = false
 
       SECURITY_TXT_PATHS.each do |path|
-        begin
-          response = http_client.get("#{base_url}#{path}")
-          if response.status.success?
-            found = true
-            findings.concat(validate_security_txt(response.body.to_s))
-            break
-          end
-        rescue StandardError
-          # Continue to next path
+        response = http_client.get("#{base_url}#{path}")
+        if response.status.success?
+          found = true
+          findings.concat(validate_security_txt(response.body.to_s))
+          break
         end
+      rescue StandardError
+        # Continue to next path
       end
 
       unless found
@@ -51,25 +49,25 @@ module Hedra
       recommended_fields = %w[Expires]
 
       required_fields.each do |field|
-        unless content.match?(/^#{field}:/i)
-          findings << {
-            header: 'security.txt',
-            issue: "Missing required field: #{field}",
-            severity: :warning,
-            recommended_fix: "Add #{field} field to security.txt"
-          }
-        end
+        next if content.match?(/^#{field}:/i)
+
+        findings << {
+          header: 'security.txt',
+          issue: "Missing required field: #{field}",
+          severity: :warning,
+          recommended_fix: "Add #{field} field to security.txt"
+        }
       end
 
       recommended_fields.each do |field|
-        unless content.match?(/^#{field}:/i)
-          findings << {
-            header: 'security.txt',
-            issue: "Missing recommended field: #{field}",
-            severity: :info,
-            recommended_fix: "Consider adding #{field} field to security.txt"
-          }
-        end
+        next if content.match?(/^#{field}:/i)
+
+        findings << {
+          header: 'security.txt',
+          issue: "Missing recommended field: #{field}",
+          severity: :info,
+          recommended_fix: "Consider adding #{field} field to security.txt"
+        }
       end
 
       # Check expiry

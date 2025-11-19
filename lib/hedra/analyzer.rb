@@ -97,14 +97,10 @@ module Hedra
       findings.concat(@plugin_manager.run_checks(normalized_headers))
 
       # Check SSL certificate
-      if @certificate_checker
-        findings.concat(@certificate_checker.check(url))
-      end
+      findings.concat(@certificate_checker.check(url)) if @certificate_checker
 
       # Check security.txt
-      if @security_txt_checker && http_client
-        findings.concat(@security_txt_checker.check(url, http_client))
-      end
+      findings.concat(@security_txt_checker.check(url, http_client)) if @security_txt_checker && http_client
 
       # Calculate security score
       score = @scorer.calculate(normalized_headers, findings)

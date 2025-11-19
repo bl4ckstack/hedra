@@ -66,9 +66,9 @@ module Hedra
       @failure_count += 1
       @last_failure_time = Time.now
 
-      if @failure_count >= @failure_threshold
-        @state = :open
-      end
+      return unless @failure_count >= @failure_threshold
+
+      @state = :open
     end
 
     def should_attempt_reset?

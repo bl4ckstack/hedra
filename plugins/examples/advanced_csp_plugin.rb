@@ -73,14 +73,14 @@ module Hedra
       directives.each do |directive, values|
         values.each do |value|
           DANGEROUS_DIRECTIVES.each do |dangerous, reason|
-            if value.include?(dangerous)
-              findings << {
-                header: 'content-security-policy',
-                issue: "CSP directive '#{directive}' contains '#{dangerous}': #{reason}",
-                severity: dangerous == '*' ? :warning : :critical,
-                recommended_fix: "Remove '#{dangerous}' and use nonces, hashes, or strict-dynamic"
-              }
-            end
+            next unless value.include?(dangerous)
+
+            findings << {
+              header: 'content-security-policy',
+              issue: "CSP directive '#{directive}' contains '#{dangerous}': #{reason}",
+              severity: dangerous == '*' ? :warning : :critical,
+              recommended_fix: "Remove '#{dangerous}' and use nonces, hashes, or strict-dynamic"
+            }
           end
         end
       end
@@ -138,14 +138,14 @@ module Hedra
 
         # Check for overly broad domains
         values.each do |value|
-          if value.start_with?('*.') && value.count('.') == 1
-            findings << {
-              header: 'content-security-policy',
-              issue: "#{directive} allows all subdomains of #{value}",
-              severity: :info,
-              recommended_fix: "Consider restricting to specific subdomains"
-            }
-          end
+          next unless value.start_with?('*.') && value.count('.') == 1
+
+          findings << {
+            header: 'content-security-policy',
+            issue: "#{directive} allows all subdomains of #{value}",
+            severity: :info,
+            recommended_fix: 'Consider restricting to specific subdomains'
+          }
         end
       end
 
@@ -160,15 +160,15 @@ module Hedra
         'referrer' => 'Use Referrer-Policy header instead'
       }
 
-      directives.keys.each do |directive|
-        if deprecated.key?(directive)
-          findings << {
-            header: 'content-security-policy',
-            issue: "Deprecated directive '#{directive}'",
-            severity: :info,
-            recommended_fix: deprecated[directive]
-          }
-        end
+      directives.each_key do |directive|
+        next unless deprecated.key?(directive)
+
+        findings << {
+          header: 'content-security-policy',
+          issue: "Deprecated directive '#{directive}'",
+          severity: :info,
+          recommended_fix: deprecated[directive]
+        }
       end
 
       findings
@@ -195,14 +195,14 @@ module Hedra
           }
         end
 
-        if (has_nonce || has_hash) && !has_strict_dynamic
-          findings << {
-            header: 'content-security-policy',
-            issue: "#{directive} uses nonces/hashes but not 'strict-dynamic'",
-            severity: :info,
-            recommended_fix: "Consider adding 'strict-dynamic' for better security"
-          }
-        end
+        next unless (has_nonce || has_hash) && !has_strict_dynamic
+
+        findings << {
+          header: 'content-security-policy',
+          issue: "#{directive} uses nonces/hashes but not 'strict-dynamic'",
+          severity: :info,
+          recommended_fix: "Consider adding 'strict-dynamic' for better security"
+        }
       end
 
       findings

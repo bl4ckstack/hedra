@@ -107,14 +107,14 @@ module Hedra
       comparisons.each do |comp|
         puts "\n#{pastel.bold(comp[:url])}"
         puts "Baseline Score: #{comp[:baseline_score]} | Current Score: #{comp[:current_score]}"
-        
+
         change = comp[:score_change]
-        if change > 0
+        if change.positive?
           puts pastel.green("Score improved by #{change} points")
-        elsif change < 0
+        elsif change.negative?
           puts pastel.red("Score decreased by #{change.abs} points")
         else
-          puts "Score unchanged"
+          puts 'Score unchanged'
         end
 
         if comp[:new_findings].any?
@@ -146,7 +146,7 @@ module Hedra
     end
   end
 
-  class CLI < Thor
+  class CLI < Thor # rubocop:disable Metrics/ClassLength
     class_option :verbose, type: :boolean, aliases: '-v', desc: 'Verbose output'
     class_option :quiet, type: :boolean, aliases: '-q', desc: 'Quiet mode'
     class_option :debug, type: :boolean, desc: 'Enable debug logging'
@@ -171,7 +171,7 @@ module Hedra
     option :check_security_txt, type: :boolean, default: false, desc: 'Check for security.txt'
     option :save_baseline, type: :string, desc: 'Save results as baseline'
     option :progress, type: :boolean, default: true, desc: 'Show progress bar'
-    def scan(target)
+    def scan(target) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
       setup_logging
       urls = options[:file] ? read_urls_from_file(target) : [target]
 
@@ -351,24 +351,22 @@ module Hedra
       failed = false
 
       urls.each do |url|
-        begin
-          response = client.get(url)
-          result = analyzer.analyze(url, response.headers.to_h, http_client: client)
-          results << result
+        response = client.get(url)
+        result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+        results << result
 
-          if result[:score] < options[:threshold]
-            say "FAIL: #{url} - Score #{result[:score]} below threshold #{options[:threshold]}", :red
-            failed = true
-          end
-
-          if options[:fail_on_critical] && result[:findings].any? { |f| f[:severity] == :critical }
-            say "FAIL: #{url} - Critical security issues found", :red
-            failed = true
-          end
-        rescue StandardError => e
-          log_error("Failed to check #{url}: #{e.message}")
+        if result[:score] < options[:threshold]
+          say "FAIL: #{url} - Score #{result[:score]} below threshold #{options[:threshold]}", :red
           failed = true
         end
+
+        if options[:fail_on_critical] && result[:findings].any? { |f| f[:severity] == :critical }
+          say "FAIL: #{url} - Critical security issues found", :red
+          failed = true
+        end
+      rescue StandardError => e
+        log_error("Failed to check #{url}: #{e.message}")
+        failed = true
       end
 
       if failed

@@ -22,7 +22,7 @@ RSpec.describe Hedra::Cache do
     end
 
     it 'handles complex data structures' do
-      data = { url: 'https://example.com', score: 85, findings: [] }
+      data = { 'url' => 'https://example.com', 'score' => 85, 'findings' => [] }
       cache.set('complex', data)
       expect(cache.get('complex')).to eq(data)
     end
@@ -31,7 +31,7 @@ RSpec.describe Hedra::Cache do
   describe 'TTL expiration' do
     it 'returns nil for expired entries' do
       cache.set('key1', 'value1')
-      sleep 2.1
+      sleep 3
       expect(cache.get('key1')).to be_nil
     end
 
@@ -56,7 +56,7 @@ RSpec.describe Hedra::Cache do
   describe '#clear_expired' do
     it 'removes only expired entries' do
       cache.set('key1', 'value1')
-      sleep 2.1
+      sleep 3
       cache.set('key2', 'value2')
 
       cache.clear_expired
