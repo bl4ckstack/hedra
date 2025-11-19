@@ -23,8 +23,13 @@ jobs:
           ruby-version: '3.2'
           bundler-cache: true
 
-      - name: Install Hedra
-        run: gem install hedra
+      - name: Install dependencies
+        run: bundle install
+
+      - name: Build and install gem
+        run: |
+          gem build hedra.gemspec
+          gem install ./hedra-*.gem
 
       - name: Run security header scan
         run: |
