@@ -89,12 +89,12 @@ Compare security headers between two URLs.
 hedra compare https://staging.example.com https://prod.example.com
 ```
 
-### ci-check
+### ci_check
 CI/CD friendly check with exit codes.
 
 ```bash
-hedra ci-check https://example.com --threshold 80
-hedra ci-check -f urls.txt --fail-on-critical
+hedra ci_check https://example.com --threshold 80
+hedra ci_check -f urls.txt --fail-on-critical
 ```
 
 **Options:**
@@ -265,7 +265,7 @@ jobs:
         run: gem install hedra
       
       - name: Security Check
-        run: hedra ci-check ${{ secrets.APP_URL }} --threshold 85
+        run: hedra ci_check ${{ secrets.APP_URL }} --threshold 85
       
       - name: Generate Report
         if: always()
@@ -286,7 +286,7 @@ security_headers:
   image: ruby:3.2
   script:
     - gem install hedra
-    - hedra ci-check $APP_URL --threshold 85 --output report.json --format json
+    - hedra ci_check $APP_URL --threshold 85 --output report.json --format json
   artifacts:
     reports:
       junit: report.json

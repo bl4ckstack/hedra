@@ -317,8 +317,8 @@ module Hedra
     option :output, type: :string, aliases: '-o', required: true, desc: 'Output file'
     option :input, type: :string, aliases: '-i', desc: 'Input JSON file with results'
     def export(format)
-      unless %w[json csv].include?(format)
-        say "Invalid format: #{format}. Use json or csv.", :red
+      unless %w[json csv html].include?(format)
+        say "Invalid format: #{format}. Use json, csv, or html.", :red
         exit 1
       end
 
@@ -337,11 +337,13 @@ module Hedra
     desc 'cache SUBCOMMAND', 'Manage response cache'
     subcommand 'cache', Hedra::CacheCLI
 
-    desc 'ci-check URL_OR_FILE', 'CI/CD friendly check (exit code based on score threshold)'
+    desc 'ci_check URL_OR_FILE', 'CI/CD friendly check (exit code based on score threshold)'
     option :file, type: :boolean, aliases: '-f', desc: 'Treat argument as file with URLs'
     option :threshold, type: :numeric, default: 80, desc: 'Minimum score threshold'
     option :fail_on_critical, type: :boolean, default: true, desc: 'Fail if critical issues found'
-    def ci_check(target)
+    option :output, type: :string, aliases: '-o', desc: 'Output file'
+    option :format, type: :string, default: 'json', desc: 'Output format (json, csv, html)'
+    def ci_check(target) # rubocop:disable Metrics/AbcSize
       setup_logging
       urls = options[:file] ? read_urls_from_file(target) : [target]
 
@@ -367,6 +369,13 @@ module Hedra
       rescue StandardError => e
         log_error("Failed to check #{url}: #{e.message}")
         failed = true
+      end
+
+      # Export results if output specified
+      if options[:output]
+        exporter = Exporter.new
+        exporter.export(results, options[:format], options[:output])
+        say "Results exported to #{options[:output]}", :green unless options[:quiet]
       end
 
       if failed
