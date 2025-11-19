@@ -126,4 +126,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-Built by [BlackStack](https://github.com/blackstack)
+**Built with ❤️ by [BlackStack](https://github.com/blackstack)**
