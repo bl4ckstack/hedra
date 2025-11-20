@@ -7,6 +7,8 @@
 
 > Security header analyzer with SSL/TLS validation, baseline tracking, and CI/CD integration.
 
+![Hedra Logo](icon.png)
+
 ## Installation
 ```bash
 gem install hedra
