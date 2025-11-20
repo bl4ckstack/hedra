@@ -504,4 +504,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**Built by [BlackStack](https://github.com/blackstack)** • Securing the web, one header at a time.
+**Built by [BlackStack](https://github.com/bl4ckstack)** • Securing the web, one header at a time.
