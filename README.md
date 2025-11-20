@@ -8,7 +8,7 @@
 > Security header analyzer with SSL/TLS validation, baseline tracking, and CI/CD integration.
 
 <p align="center">
-  <img src="logo.png" width="250" alt="Hedra Logo"/>
+  <img src="logo.png" width="380" alt="Hedra Logo"/>
 </p>
 
 ## Installation
