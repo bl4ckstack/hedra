@@ -7,7 +7,7 @@
 
 > Security header analyzer with SSL/TLS validation, baseline tracking, and CI/CD integration.
 
-![Hedra Logo](icon.png)
+![Hedra Logo](logo.png)
 
 ## Installation
 ```bash
