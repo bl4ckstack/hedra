@@ -117,7 +117,14 @@ module Hedra
     private
 
     def normalize_headers(headers)
-      headers.transform_keys { |k| k.to_s.downcase }
+      normalized = {}
+      headers.each do |key, value|
+        normalized_key = key.to_s.downcase
+        # Handle array values (multiple header values)
+        normalized_value = value.is_a?(Array) ? value.join(', ') : value.to_s
+        normalized[normalized_key] = normalized_value
+      end
+      normalized
     end
 
     def validate_header_values(headers)
@@ -125,7 +132,7 @@ module Hedra
 
       # Validate CSP
       if headers['content-security-policy']
-        csp = headers['content-security-policy']
+        csp = headers['content-security-policy'].to_s.downcase
         if csp.include?('unsafe-inline') || csp.include?('unsafe-eval')
           findings << {
             header: 'content-security-policy',
@@ -134,11 +141,21 @@ module Hedra
             recommended_fix: 'Remove unsafe-inline and unsafe-eval, use nonces or hashes'
           }
         end
+        
+        # Check for wildcard sources
+        if csp =~ /\*(?!\.)/ && !csp.include?("'unsafe-inline'")
+          findings << {
+            header: 'content-security-policy',
+            issue: 'CSP uses wildcard (*) source',
+            severity: :info,
+            recommended_fix: 'Restrict sources to specific domains'
+          }
+        end
       end
 
       # Validate HSTS
       if headers['strict-transport-security']
-        hsts = headers['strict-transport-security']
+        hsts = headers['strict-transport-security'].to_s
         if hsts =~ /max-age=(\d+)/
           max_age = ::Regexp.last_match(1).to_i
           if max_age < 31_536_000
@@ -149,12 +166,29 @@ module Hedra
               recommended_fix: 'Set max-age to at least 31536000'
             }
           end
+        else
+          findings << {
+            header: 'strict-transport-security',
+            issue: 'HSTS header missing max-age directive',
+            severity: :critical,
+            recommended_fix: 'Add max-age directive with value >= 31536000'
+          }
+        end
+        
+        # Check for includeSubDomains
+        unless hsts.downcase.include?('includesubdomains')
+          findings << {
+            header: 'strict-transport-security',
+            issue: 'HSTS missing includeSubDomains directive',
+            severity: :info,
+            recommended_fix: 'Add includeSubDomains to protect all subdomains'
+          }
         end
       end
 
       # Validate X-Frame-Options
       if headers['x-frame-options']
-        xfo = headers['x-frame-options'].upcase
+        xfo = headers['x-frame-options'].to_s.upcase
         unless %w[DENY SAMEORIGIN].include?(xfo.split.first)
           findings << {
             header: 'x-frame-options',
@@ -167,7 +201,7 @@ module Hedra
 
       # Validate X-Content-Type-Options
       if headers['x-content-type-options']
-        xcto = headers['x-content-type-options'].downcase
+        xcto = headers['x-content-type-options'].to_s.downcase.strip
         unless xcto == 'nosniff'
           findings << {
             header: 'x-content-type-options',
@@ -176,6 +210,25 @@ module Hedra
             recommended_fix: 'Set to nosniff'
           }
         end
+      end
+      
+      # Check for information disclosure headers
+      if headers['server']
+        findings << {
+          header: 'server',
+          issue: 'Server header exposes server information',
+          severity: :info,
+          recommended_fix: 'Remove or obfuscate Server header'
+        }
+      end
+      
+      if headers['x-powered-by']
+        findings << {
+          header: 'x-powered-by',
+          issue: 'X-Powered-By header exposes technology stack',
+          severity: :info,
+          recommended_fix: 'Remove X-Powered-By header'
+        }
       end
 
       findings
@@ -186,8 +239,13 @@ module Hedra
       config_path = File.expand_path('~/.hedra/rules.yml')
       return unless File.exist?(config_path)
 
-      rules = YAML.load_file(config_path)
+      content = File.read(config_path)
+      return if content.strip.empty?
+
+      rules = YAML.safe_load(content, permitted_classes: [Symbol])
       @custom_rules = rules['rules'] || []
+    rescue Psych::SyntaxError => e
+      warn "Invalid YAML in rules file: #{e.message}"
     rescue StandardError => e
       warn "Failed to load custom rules: #{e.message}"
     end

@@ -8,11 +8,14 @@ module Hedra
   # Simple file-based cache for HTTP responses
   class Cache
     DEFAULT_TTL = 3600 # 1 hour
+    MAX_CACHE_SIZE = 1000 # Maximum number of cache files
 
-    def initialize(cache_dir: nil, ttl: DEFAULT_TTL)
+    def initialize(cache_dir: nil, ttl: DEFAULT_TTL, verbose: false)
       @cache_dir = cache_dir || File.join(Config::CONFIG_DIR, 'cache')
       @ttl = ttl
+      @verbose = verbose
       FileUtils.mkdir_p(@cache_dir)
+      cleanup_if_needed
     end
 
     def get(key)
@@ -20,11 +23,19 @@ module Hedra
       return nil unless File.exist?(cache_file)
 
       data = JSON.parse(File.read(cache_file))
-      return nil if expired?(data['timestamp'])
+      
+      if expired?(data['timestamp'])
+        File.delete(cache_file) # Clean up expired file immediately
+        return nil
+      end
 
       data['value']
+    rescue JSON::ParserError
+      # Corrupted cache file, delete it
+      File.delete(cache_file) if File.exist?(cache_file)
+      nil
     rescue StandardError => e
-      warn "Cache read error: #{e.message}"
+      warn "Cache read error: #{e.message}" if @verbose
       nil
     end
 
@@ -34,9 +45,14 @@ module Hedra
         'timestamp' => Time.now.to_i,
         'value' => value
       }
-      File.write(cache_file, JSON.generate(data))
+      
+      # Atomic write to prevent corruption
+      temp_file = "#{cache_file}.tmp"
+      File.write(temp_file, JSON.generate(data))
+      File.rename(temp_file, cache_file)
     rescue StandardError => e
-      warn "Cache write error: #{e.message}"
+      warn "Cache write error: #{e.message}" if @verbose
+      File.delete(temp_file) if File.exist?(temp_file)
     end
 
     def clear
@@ -62,6 +78,16 @@ module Hedra
 
     def expired?(timestamp)
       (Time.now.to_i - timestamp) > @ttl
+    end
+
+    def cleanup_if_needed
+      cache_files = Dir.glob(File.join(@cache_dir, '*'))
+      return if cache_files.length < MAX_CACHE_SIZE
+
+      # Remove oldest files if cache is too large
+      cache_files.sort_by { |f| File.mtime(f) }
+                 .first(cache_files.length - MAX_CACHE_SIZE + 100)
+                 .each { |f| File.delete(f) rescue nil }
     end
   end
 end

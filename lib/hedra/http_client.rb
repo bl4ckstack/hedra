@@ -94,9 +94,12 @@ module Hedra
     def retryable_error?(error)
       # Retry on network errors, timeouts, but not on HTTP errors like 404
       error.is_a?(HTTP::TimeoutError) ||
+        error.is_a?(HTTP::ConnectionError) ||
         error.is_a?(Errno::ECONNREFUSED) ||
         error.is_a?(Errno::ETIMEDOUT) ||
-        error.is_a?(Errno::EHOSTUNREACH)
+        error.is_a?(Errno::EHOSTUNREACH) ||
+        error.is_a?(Errno::ECONNRESET) ||
+        error.is_a?(Errno::EPIPE)
     end
 
     def log(message)

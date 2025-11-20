@@ -406,22 +406,59 @@ module Hedra
     end
 
     def read_urls_from_file(file)
-      File.readlines(file).map(&:strip).reject(&:empty?)
+      unless File.exist?(file)
+        log_error("File not found: #{file}")
+        exit 1
+      end
+
+      urls = File.readlines(file).map(&:strip).reject(&:empty?)
+      
+      if urls.empty?
+        log_error("No URLs found in file: #{file}")
+        exit 1
+      end
+
+      # Validate URLs
+      invalid_urls = urls.reject { |url| valid_url?(url) }
+      if invalid_urls.any?
+        log_error("Invalid URLs found: #{invalid_urls.join(', ')}")
+        exit 1
+      end
+
+      urls
     rescue StandardError => e
       log_error("Failed to read file #{file}: #{e.message}")
       exit 1
     end
 
+    def valid_url?(url)
+      uri = URI.parse(url)
+      uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+    rescue URI::InvalidURIError
+      false
+    end
+
     def with_concurrency(items, concurrency)
       require 'concurrent'
       pool = Concurrent::FixedThreadPool.new(concurrency)
+      mutex = Mutex.new
+      errors = []
 
       items.each do |item|
-        pool.post { yield item }
+        pool.post do
+          yield item
+        rescue StandardError => e
+          mutex.synchronize { errors << { item: item, error: e } }
+        end
       end
 
       pool.shutdown
       pool.wait_for_termination
+      
+      # Log any errors that occurred
+      errors.each do |err|
+        log_error("Error processing #{err[:item]}: #{err[:error].message}")
+      end
     end
 
     def print_result(result)

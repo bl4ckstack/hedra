@@ -15,97 +15,104 @@ module Hedra
         <title>Hedra Security Report</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
-          .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
-          .header h1 { font-size: 32px; margin-bottom: 10px; }
-          .header .meta { opacity: 0.9; font-size: 14px; }
-          .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 30px; border-bottom: 1px solid #eee; }
-          .summary-card { text-align: center; padding: 20px; background: #f9f9f9; border-radius: 8px; }
-          .summary-card .value { font-size: 36px; font-weight: bold; margin: 10px 0; }
-          .summary-card .label { color: #666; font-size: 14px; }
-          .score-a { color: #10b981; }
-          .score-b { color: #f59e0b; }
-          .score-c { color: #ef4444; }
-          .results { padding: 30px; }
-          .result-item { margin-bottom: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
-          .result-header { background: #f9f9f9; padding: 20px; border-bottom: 1px solid #eee; }
-          .result-header h2 { font-size: 18px; margin-bottom: 10px; word-break: break-all; }
-          .result-header .score { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
-          .result-body { padding: 20px; }
-          .finding { padding: 15px; margin-bottom: 10px; border-left: 4px solid; border-radius: 4px; background: #f9f9f9; }
-          .finding.critical { border-color: #ef4444; background: #fef2f2; }
-          .finding.warning { border-color: #f59e0b; background: #fffbeb; }
-          .finding.info { border-color: #3b82f6; background: #eff6ff; }
-          .finding-header { font-weight: bold; margin-bottom: 5px; }
-          .finding-issue { margin-bottom: 5px; }
-          .finding-fix { font-size: 14px; color: #666; font-style: italic; }
-          .badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-          .badge.critical { background: #ef4444; color: white; }
-          .badge.warning { background: #f59e0b; color: white; }
-          .badge.info { background: #3b82f6; color: white; }
-          .no-findings { text-align: center; padding: 40px; color: #10b981; font-size: 18px; }
-          .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; color: #1a1a1a; line-height: 1.6; }
+          .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+          .header { margin-bottom: 48px; }
+          .header h1 { font-size: 28px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.5px; }
+          .header .meta { color: #666; font-size: 14px; }
+          .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 48px; }
+          .summary-card { background: white; border: 1px solid #e5e5e5; border-radius: 6px; padding: 20px; }
+          .summary-card .label { color: #666; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+          .summary-card .value { font-size: 32px; font-weight: 600; }
+          .score-a { color: #16a34a; }
+          .score-b { color: #ea580c; }
+          .score-c { color: #dc2626; }
+          .result-item { background: white; border: 1px solid #e5e5e5; border-radius: 6px; margin-bottom: 24px; overflow: hidden; }
+          .result-header { padding: 24px; border-bottom: 1px solid #e5e5e5; }
+          .result-header h2 { font-size: 16px; font-weight: 500; margin-bottom: 12px; word-break: break-all; color: #1a1a1a; }
+          .result-meta { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+          .score-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 4px; font-weight: 500; font-size: 14px; }
+          .score-badge.score-a { background: #dcfce7; color: #166534; }
+          .score-badge.score-b { background: #fed7aa; color: #9a3412; }
+          .score-badge.score-c { background: #fee2e2; color: #991b1b; }
+          .timestamp { color: #666; }
+          .result-body { padding: 24px; }
+          .finding { padding: 16px; margin-bottom: 12px; border-radius: 4px; border-left: 3px solid; }
+          .finding.critical { border-color: #dc2626; background: #fef2f2; }
+          .finding.warning { border-color: #ea580c; background: #fff7ed; }
+          .finding.info { border-color: #2563eb; background: #eff6ff; }
+          .finding-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+          .severity-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+          .severity-badge.critical { background: #dc2626; color: white; }
+          .severity-badge.warning { background: #ea580c; color: white; }
+          .severity-badge.info { background: #2563eb; color: white; }
+          .header-name { font-family: 'Courier New', monospace; font-size: 13px; color: #666; }
+          .finding-issue { font-size: 14px; margin-bottom: 8px; color: #1a1a1a; }
+          .finding-fix { font-size: 13px; color: #666; padding-left: 16px; border-left: 2px solid #e5e5e5; }
+          .no-findings { text-align: center; padding: 32px; color: #16a34a; font-size: 15px; }
+          .footer { text-align: center; padding: 32px 0; color: #999; font-size: 13px; border-top: 1px solid #e5e5e5; margin-top: 48px; }
+          .footer a { color: #666; text-decoration: none; }
+          .footer a:hover { color: #1a1a1a; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>🛡️ Hedra Security Report</h1>
-            <div class="meta">Generated: <%= Time.now.strftime('%Y-%m-%d %H:%M:%S %Z') %></div>
+            <h1>Security Report</h1>
+            <div class="meta"><%= Time.now.strftime('%B %d, %Y at %H:%M %Z') %></div>
           </div>
-      #{'    '}
+
           <div class="summary">
             <div class="summary-card">
-              <div class="label">URLs Scanned</div>
+              <div class="label">URLs</div>
               <div class="value"><%= results.length %></div>
             </div>
             <div class="summary-card">
-              <div class="label">Average Score</div>
-              <div class="value <%= score_class(avg_score) %>"><%= avg_score.round %>/100</div>
+              <div class="label">Avg Score</div>
+              <div class="value <%= score_class(avg_score) %>"><%= avg_score.round %></div>
             </div>
             <div class="summary-card">
-              <div class="label">Total Findings</div>
+              <div class="label">Findings</div>
               <div class="value"><%= total_findings %></div>
             </div>
             <div class="summary-card">
-              <div class="label">Critical Issues</div>
-              <div class="value" style="color: #ef4444;"><%= critical_count %></div>
+              <div class="label">Critical</div>
+              <div class="value score-c"><%= critical_count %></div>
             </div>
           </div>
-      #{'    '}
-          <div class="results">
-            <% results.each do |result| %>
-              <div class="result-item">
-                <div class="result-header">
-                  <h2><%= result[:url] %></h2>
-                  <span class="score <%= score_class(result[:score]) %>">Score: <%= result[:score] %>/100</span>
-                  <span style="color: #666; margin-left: 15px; font-size: 14px;"><%= result[:timestamp] %></span>
-                </div>
-                <div class="result-body">
-                  <% if result[:findings].empty? %>
-                    <div class="no-findings">✓ All security headers properly configured</div>
-                  <% else %>
-                    <% result[:findings].each do |finding| %>
-                      <div class="finding <%= finding[:severity] %>">
-                        <div class="finding-header">
-                          <span class="badge <%= finding[:severity] %>"><%= finding[:severity] %></span>
-                          <%= finding[:header] %>
-                        </div>
-                        <div class="finding-issue"><%= finding[:issue] %></div>
-                        <% if finding[:recommended_fix] %>
-                          <div class="finding-fix">💡 <%= finding[:recommended_fix] %></div>
-                        <% end %>
-                      </div>
-                    <% end %>
-                  <% end %>
+
+          <% results.each do |result| %>
+            <div class="result-item">
+              <div class="result-header">
+                <h2><%= result[:url] %></h2>
+                <div class="result-meta">
+                  <span class="score-badge <%= score_class(result[:score]) %>"><%= result[:score] %>/100</span>
+                  <span class="timestamp"><%= result[:timestamp] %></span>
                 </div>
               </div>
-            <% end %>
-          </div>
-      #{'    '}
+              <div class="result-body">
+                <% if result[:findings].empty? %>
+                  <div class="no-findings">✓ All security headers properly configured</div>
+                <% else %>
+                  <% result[:findings].each do |finding| %>
+                    <div class="finding <%= finding[:severity] %>">
+                      <div class="finding-header">
+                        <span class="severity-badge <%= finding[:severity] %>"><%= finding[:severity] %></span>
+                        <span class="header-name"><%= finding[:header] %></span>
+                      </div>
+                      <div class="finding-issue"><%= finding[:issue] %></div>
+                      <% if finding[:recommended_fix] %>
+                        <div class="finding-fix"><%= finding[:recommended_fix] %></div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
           <div class="footer">
-            Generated by Hedra <%= Hedra::VERSION %> | <a href="https://github.com/blackstack/hedra">GitHub</a>
+            Generated by Hedra <%= Hedra::VERSION %> · <a href="https://github.com/bl4ckstack/hedra">GitHub</a>
           </div>
         </div>
       </body>

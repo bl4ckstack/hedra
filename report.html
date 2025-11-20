@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hedra Security Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px 8px 0 0; }
+    .header h1 { font-size: 32px; margin-bottom: 10px; }
+    .header .meta { opacity: 0.9; font-size: 14px; }
+    .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 30px; border-bottom: 1px solid #eee; }
+    .summary-card { text-align: center; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+    .summary-card .value { font-size: 36px; font-weight: bold; margin: 10px 0; }
+    .summary-card .label { color: #666; font-size: 14px; }
+    .score-a { color: #10b981; }
+    .score-b { color: #f59e0b; }
+    .score-c { color: #ef4444; }
+    .results { padding: 30px; }
+    .result-item { margin-bottom: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+    .result-header { background: #f9f9f9; padding: 20px; border-bottom: 1px solid #eee; }
+    .result-header h2 { font-size: 18px; margin-bottom: 10px; word-break: break-all; }
+    .result-header .score { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+    .result-body { padding: 20px; }
+    .finding { padding: 15px; margin-bottom: 10px; border-left: 4px solid; border-radius: 4px; background: #f9f9f9; }
+    .finding.critical { border-color: #ef4444; background: #fef2f2; }
+    .finding.warning { border-color: #f59e0b; background: #fffbeb; }
+    .finding.info { border-color: #3b82f6; background: #eff6ff; }
+    .finding-header { font-weight: bold; margin-bottom: 5px; }
+    .finding-issue { margin-bottom: 5px; }
+    .finding-fix { font-size: 14px; color: #666; font-style: italic; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+    .badge.critical { background: #ef4444; color: white; }
+    .badge.warning { background: #f59e0b; color: white; }
+    .badge.info { background: #3b82f6; color: white; }
+    .no-findings { text-align: center; padding: 40px; color: #10b981; font-size: 18px; }
+    .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ Hedra Security Report</h1>
+      <div class="meta">Generated: 2025-11-20 10:54:17 PKT</div>
+    </div>
+    
+    <div class="summary">
+      <div class="summary-card">
+        <div class="label">URLs Scanned</div>
+        <div class="value">2</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Average Score</div>
+        <div class="value score-c">10/100</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Total Findings</div>
+        <div class="value">9</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">Critical Issues</div>
+        <div class="value" style="color: #ef4444;">2</div>
+      </div>
+    </div>
+    
+    <div class="results">
+      
+        <div class="result-item">
+          <div class="result-header">
+            <h2>https://sudoctf.xyz</h2>
+            <span class="score score-c">Score: 20/100</span>
+            <span style="color: #666; margin-left: 15px; font-size: 14px;">2025-11-20T10:54:16+05:00</span>
+          </div>
+          <div class="result-body">
+            
+              
+                <div class="finding warning">
+                  <div class="finding-header">
+                    <span class="badge warning">warning</span>
+                    x-frame-options
+                  </div>
+                  <div class="finding-issue">X-Frame-Options header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add X-Frame-Options: DENY or SAMEORIGIN</div>
+                  
+                </div>
+              
+                <div class="finding warning">
+                  <div class="finding-header">
+                    <span class="badge warning">warning</span>
+                    x-content-type-options
+                  </div>
+                  <div class="finding-issue">X-Content-Type-Options header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add X-Content-Type-Options: nosniff</div>
+                  
+                </div>
+              
+                <div class="finding info">
+                  <div class="finding-header">
+                    <span class="badge info">info</span>
+                    referrer-policy
+                  </div>
+                  <div class="finding-issue">Referrer-Policy header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add Referrer-Policy: strict-origin-when-cross-origin</div>
+                  
+                </div>
+              
+                <div class="finding warning">
+                  <div class="finding-header">
+                    <span class="badge warning">warning</span>
+                    content-security-policy
+                  </div>
+                  <div class="finding-issue">CSP contains unsafe directives (unsafe-inline or unsafe-eval)</div>
+                  
+                    <div class="finding-fix">💡 Remove unsafe-inline and unsafe-eval, use nonces or hashes</div>
+                  
+                </div>
+              
+            
+          </div>
+        </div>
+      
+        <div class="result-item">
+          <div class="result-header">
+            <h2>https://nust.edu.pk</h2>
+            <span class="score score-c">Score: 0/100</span>
+            <span style="color: #666; margin-left: 15px; font-size: 14px;">2025-11-20T10:54:17+05:00</span>
+          </div>
+          <div class="result-body">
+            
+              
+                <div class="finding critical">
+                  <div class="finding-header">
+                    <span class="badge critical">critical</span>
+                    content-security-policy
+                  </div>
+                  <div class="finding-issue">Content-Security-Policy header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add CSP header: Content-Security-Policy: default-src 'self'</div>
+                  
+                </div>
+              
+                <div class="finding critical">
+                  <div class="finding-header">
+                    <span class="badge critical">critical</span>
+                    strict-transport-security
+                  </div>
+                  <div class="finding-issue">Strict-Transport-Security (HSTS) header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add HSTS header: Strict-Transport-Security: max-age=31536000; includeSubDomains</div>
+                  
+                </div>
+              
+                <div class="finding warning">
+                  <div class="finding-header">
+                    <span class="badge warning">warning</span>
+                    x-frame-options
+                  </div>
+                  <div class="finding-issue">X-Frame-Options header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add X-Frame-Options: DENY or SAMEORIGIN</div>
+                  
+                </div>
+              
+                <div class="finding warning">
+                  <div class="finding-header">
+                    <span class="badge warning">warning</span>
+                    x-content-type-options
+                  </div>
+                  <div class="finding-issue">X-Content-Type-Options header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add X-Content-Type-Options: nosniff</div>
+                  
+                </div>
+              
+                <div class="finding info">
+                  <div class="finding-header">
+                    <span class="badge info">info</span>
+                    referrer-policy
+                  </div>
+                  <div class="finding-issue">Referrer-Policy header is missing</div>
+                  
+                    <div class="finding-fix">💡 Add Referrer-Policy: strict-origin-when-cross-origin</div>
+                  
+                </div>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    
+    <div class="footer">
+      Generated by Hedra 2.0.0 | <a href="https://github.com/blackstack/hedra">GitHub</a>
+    </div>
+  </div>
+</body>
+</html>
