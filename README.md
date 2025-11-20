@@ -493,9 +493,9 @@ hedra scan https://slow-server.com --timeout 60
 
 ## Resources
 
-**GitHub:** https://github.com/blackstack/hedra  
+**GitHub:** https://github.com/bl4ckstack/hedra  
 **RubyGems:** https://rubygems.org/gems/hedra  
-**Issues:** https://github.com/blackstack/hedra/issues  
+**Issues:** https://github.com/bl4ckstack/hedra/issues  
 **OWASP Headers:** https://owasp.org/www-project-secure-headers/
 
 ## License
