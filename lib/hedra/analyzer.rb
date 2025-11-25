@@ -66,6 +66,8 @@ module Hedra
       @scorer = Scorer.new
       @certificate_checker = check_certificates ? CertificateChecker.new : nil
       @security_txt_checker = check_security_txt ? SecurityTxtChecker.new : nil
+      @custom_rules = []
+      @mutex = Mutex.new # Thread safety for custom rules
       load_custom_rules
     end
 
@@ -119,9 +121,15 @@ module Hedra
     def normalize_headers(headers)
       normalized = {}
       headers.each do |key, value|
+        next if value.nil? # Skip nil values
+
         normalized_key = key.to_s.downcase
         # Handle array values (multiple header values)
-        normalized_value = value.is_a?(Array) ? value.join(', ') : value.to_s
+        normalized_value = if value.is_a?(Array)
+                             value.compact.join(', ')
+                           else
+                             value.to_s
+                           end
         normalized[normalized_key] = normalized_value
       end
       normalized
@@ -253,30 +261,38 @@ module Hedra
     def apply_custom_rules(headers)
       findings = []
 
-      @custom_rules.each do |rule|
-        header_name = rule['header'].downcase
-        pattern = Regexp.new(rule['pattern']) if rule['pattern']
+      @mutex.synchronize do
+        @custom_rules.each do |rule|
+          header_name = rule['header'].downcase
+          pattern = rule['pattern'] ? Regexp.new(rule['pattern']) : nil
 
-        if rule['type'] == 'missing' && !headers.key?(header_name)
-          findings << {
-            header: header_name,
-            issue: rule['message'],
-            severity: rule['severity'].to_sym,
-            recommended_fix: rule['fix']
-          }
-        elsif rule['type'] == 'pattern' && headers[header_name]
-          if pattern && headers[header_name] =~ pattern
+          if rule['type'] == 'missing' && !headers.key?(header_name)
             findings << {
               header: header_name,
               issue: rule['message'],
               severity: rule['severity'].to_sym,
               recommended_fix: rule['fix']
             }
+          elsif rule['type'] == 'pattern' && headers[header_name]
+            if pattern && headers[header_name] =~ pattern
+              findings << {
+                header: header_name,
+                issue: rule['message'],
+                severity: rule['severity'].to_sym,
+                recommended_fix: rule['fix']
+              }
+            end
           end
         end
       end
 
       findings
+    end
+
+    def reload_custom_rules
+      @mutex.synchronize do
+        load_custom_rules
+      end
     end
   end
 end

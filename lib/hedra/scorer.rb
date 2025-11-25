@@ -23,9 +23,10 @@ module Hedra
     def calculate(headers, findings)
       base_score = calculate_base_score(headers)
       penalty = calculate_penalty(findings)
+      bonus = calculate_bonus(headers)
 
-      score = [base_score - penalty, 0].max
-      score.round
+      score = [base_score - penalty + bonus, 0].max
+      [score.round, 100].min # Cap at 100
     end
 
     private
@@ -49,6 +50,27 @@ module Hedra
       end
 
       penalty
+    end
+
+    def calculate_bonus(headers)
+      bonus = 0
+
+      # Bonus for HSTS with includeSubDomains
+      if headers['strict-transport-security']&.include?('includeSubDomains')
+        bonus += 2
+      end
+
+      # Bonus for HSTS with preload
+      if headers['strict-transport-security']&.include?('preload')
+        bonus += 3
+      end
+
+      # Bonus for having all recommended headers
+      if HEADER_WEIGHTS.keys.all? { |h| headers.key?(h) }
+        bonus += 5
+      end
+
+      bonus
     end
   end
 end

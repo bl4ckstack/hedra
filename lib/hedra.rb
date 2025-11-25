@@ -7,6 +7,8 @@ module Hedra
 end
 
 require_relative 'hedra/version'
+require_relative 'hedra/banner'
+require_relative 'hedra/url_validator'
 require_relative 'hedra/config'
 require_relative 'hedra/scorer'
 require_relative 'hedra/circuit_breaker'

@@ -16,14 +16,17 @@ module Hedra
       @last_failure_time = nil
       @state = :closed
       @half_open_attempts = 0
+      @mutex = Mutex.new # Thread safety
     end
 
     def call
-      raise CircuitOpenError, 'Circuit breaker is open' if open? && !should_attempt_reset?
+      @mutex.synchronize do
+        raise CircuitOpenError, 'Circuit breaker is open' if open? && !should_attempt_reset?
 
-      if open? && should_attempt_reset?
-        @state = :half_open
-        @half_open_attempts = 0
+        if open? && should_attempt_reset?
+          @state = :half_open
+          @half_open_attempts = 0
+        end
       end
 
       begin
@@ -51,28 +54,34 @@ module Hedra
     private
 
     def on_success
-      if half_open?
-        @half_open_attempts += 1
-        if @half_open_attempts >= HALF_OPEN_ATTEMPTS
-          @state = :closed
+      @mutex.synchronize do
+        if half_open?
+          @half_open_attempts += 1
+          if @half_open_attempts >= HALF_OPEN_ATTEMPTS
+            @state = :closed
+            @failure_count = 0
+          end
+        else
           @failure_count = 0
         end
-      else
-        @failure_count = 0
       end
     end
 
     def on_failure
-      @failure_count += 1
-      @last_failure_time = Time.now
+      @mutex.synchronize do
+        @failure_count += 1
+        @last_failure_time = Time.now
 
-      return unless @failure_count >= @failure_threshold
+        return unless @failure_count >= @failure_threshold
 
-      @state = :open
+        @state = :open
+      end
     end
 
     def should_attempt_reset?
-      @last_failure_time && (Time.now - @last_failure_time) >= @timeout
+      @mutex.synchronize do
+        @last_failure_time && (Time.now - @last_failure_time) >= @timeout
+      end
     end
   end
 

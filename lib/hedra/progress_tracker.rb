@@ -23,7 +23,12 @@ module Hedra
 
       puts "\n"
       elapsed = Time.now - @start_time
-      puts "Completed #{@total} items in #{elapsed.round(2)}s"
+      rate = @total / elapsed
+      puts "Completed #{@total} items in #{elapsed.round(2)}s (#{rate.round(2)} items/s)"
+    end
+
+    def percentage
+      (@current.to_f / @total * 100).round(1)
     end
 
     private

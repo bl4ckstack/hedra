@@ -16,9 +16,17 @@ module Hedra
 
     def install(path)
       raise Error, "Plugin file not found: #{path}" unless File.exist?(path)
+      raise Error, "Not a Ruby file: #{path}" unless path.end_with?('.rb')
+
+      # Validate plugin syntax before installing
+      validate_plugin_syntax(path)
 
       plugin_name = File.basename(path)
       dest = File.join(@plugin_dir, plugin_name)
+      
+      # Backup existing plugin if it exists
+      backup_existing_plugin(dest) if File.exist?(dest)
+      
       FileUtils.cp(path, dest)
       load_plugin(dest)
     end
@@ -48,7 +56,7 @@ module Hedra
     def load_plugins
       @plugins = []
 
-      Dir.glob(File.join(@plugin_dir, '*.rb')).each do |file|
+      Dir.glob(File.join(@plugin_dir, '*.rb')).sort.each do |file|
         load_plugin(file)
       end
     end
@@ -58,6 +66,20 @@ module Hedra
       # Plugins should define classes that respond to .check(headers)
     rescue StandardError => e
       warn "Failed to load plugin #{file}: #{e.message}"
+    end
+
+    def validate_plugin_syntax(path)
+      code = File.read(path)
+      RubyVM::InstructionSequence.compile(code)
+    rescue SyntaxError => e
+      raise Error, "Plugin has syntax errors: #{e.message}"
+    end
+
+    def backup_existing_plugin(dest)
+      backup_path = "#{dest}.backup"
+      FileUtils.cp(dest, backup_path)
+    rescue StandardError => e
+      warn "Failed to backup existing plugin: #{e.message}"
     end
   end
 

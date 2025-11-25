@@ -14,22 +14,38 @@ module Hedra
       @cache_dir = cache_dir || File.join(Config::CONFIG_DIR, 'cache')
       @ttl = ttl
       @verbose = verbose
+      @mutex = Mutex.new # Thread safety for cache operations
+      @memory_cache = {} # In-memory cache to reduce disk I/O
+      @memory_cache_size = 100
       FileUtils.mkdir_p(@cache_dir)
       cleanup_if_needed
     end
 
     def get(key)
-      cache_file = cache_path(key)
-      return nil unless File.exist?(cache_file)
+      @mutex.synchronize do
+        # Check memory cache first
+        if @memory_cache.key?(key)
+          cached = @memory_cache[key]
+          return cached[:value] unless expired?(cached[:timestamp])
 
-      data = JSON.parse(File.read(cache_file))
-      
-      if expired?(data['timestamp'])
-        File.delete(cache_file) # Clean up expired file immediately
-        return nil
+          @memory_cache.delete(key)
+        end
+
+        cache_file = cache_path(key)
+        return nil unless File.exist?(cache_file)
+
+        data = JSON.parse(File.read(cache_file))
+
+        if expired?(data['timestamp'])
+          File.delete(cache_file) # Clean up expired file immediately
+          return nil
+        end
+
+        # Store in memory cache
+        store_in_memory(key, data['timestamp'], data['value'])
+
+        data['value']
       end
-
-      data['value']
     rescue JSON::ParserError
       # Corrupted cache file, delete it
       File.delete(cache_file) if File.exist?(cache_file)
@@ -40,24 +56,33 @@ module Hedra
     end
 
     def set(key, value)
-      cache_file = cache_path(key)
-      data = {
-        'timestamp' => Time.now.to_i,
-        'value' => value
-      }
-      
-      # Atomic write to prevent corruption
-      temp_file = "#{cache_file}.tmp"
-      File.write(temp_file, JSON.generate(data))
-      File.rename(temp_file, cache_file)
+      @mutex.synchronize do
+        timestamp = Time.now.to_i
+        cache_file = cache_path(key)
+        data = {
+          'timestamp' => timestamp,
+          'value' => value
+        }
+
+        # Store in memory cache
+        store_in_memory(key, timestamp, value)
+
+        # Atomic write to prevent corruption
+        temp_file = "#{cache_file}.tmp"
+        File.write(temp_file, JSON.generate(data))
+        File.rename(temp_file, cache_file)
+      end
     rescue StandardError => e
       warn "Cache write error: #{e.message}" if @verbose
       File.delete(temp_file) if File.exist?(temp_file)
     end
 
     def clear
-      FileUtils.rm_rf(@cache_dir)
-      FileUtils.mkdir_p(@cache_dir)
+      @mutex.synchronize do
+        @memory_cache.clear
+        FileUtils.rm_rf(@cache_dir)
+        FileUtils.mkdir_p(@cache_dir)
+      end
     end
 
     def clear_expired
@@ -88,6 +113,17 @@ module Hedra
       cache_files.sort_by { |f| File.mtime(f) }
                  .first(cache_files.length - MAX_CACHE_SIZE + 100)
                  .each { |f| File.delete(f) rescue nil }
+    end
+
+    def store_in_memory(key, timestamp, value)
+      # Limit memory cache size to prevent memory leaks
+      if @memory_cache.size >= @memory_cache_size
+        # Remove oldest entry
+        oldest_key = @memory_cache.keys.first
+        @memory_cache.delete(oldest_key)
+      end
+
+      @memory_cache[key] = { timestamp: timestamp, value: value }
     end
   end
 end

@@ -155,6 +155,14 @@ module Hedra
       true
     end
 
+    # Override to show banner when no command is given
+    def self.start(given_args = ARGV, config = {})
+      if given_args.empty? || (given_args.length == 1 && %w[-h --help help].include?(given_args.first))
+        Banner.show unless given_args.include?('help')
+      end
+      super
+    end
+
     desc 'scan URL_OR_FILE', 'Scan one or multiple URLs for security headers'
     option :file, type: :boolean, aliases: '-f', desc: 'Treat argument as file with URLs'
     option :concurrency, type: :numeric, aliases: '-c', default: 10, desc: 'Concurrent requests'
@@ -328,6 +336,11 @@ module Hedra
       say "Exported to #{options[:output]}", :green unless options[:quiet]
     end
 
+    desc 'version', 'Show version information'
+    def version
+      Banner.show
+    end
+
     desc 'plugin SUBCOMMAND', 'Manage plugins'
     subcommand 'plugin', Hedra::PluginCLI
 
@@ -432,10 +445,7 @@ module Hedra
     end
 
     def valid_url?(url)
-      uri = URI.parse(url)
-      uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
-    rescue URI::InvalidURIError
-      false
+      UrlValidator.valid?(url)
     end
 
     def with_concurrency(items, concurrency)

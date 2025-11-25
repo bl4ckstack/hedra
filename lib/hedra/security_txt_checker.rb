@@ -10,7 +10,12 @@ module Hedra
 
     def check(url, http_client)
       uri = URI.parse(url)
-      base_url = "#{uri.scheme}://#{uri.host}#{":#{uri.port}" if uri.port && ![80, 443].include?(uri.port)}"
+      port_part = if uri.port && ![80, 443].include?(uri.port)
+                    ":#{uri.port}"
+                  else
+                    ''
+                  end
+      base_url = "#{uri.scheme}://#{uri.host}#{port_part}"
 
       findings = []
       found = false
@@ -19,7 +24,9 @@ module Hedra
         response = http_client.get("#{base_url}#{path}")
         if response.status.success?
           found = true
-          findings.concat(validate_security_txt(response.body.to_s))
+          content = response.body.to_s
+          findings.concat(validate_security_txt(content))
+          findings.concat(check_signed(content))
           break
         end
       rescue StandardError
@@ -42,6 +49,22 @@ module Hedra
     end
 
     private
+
+    def check_signed(content)
+      findings = []
+
+      # Check if security.txt is signed (PGP signature)
+      unless content.include?('-----BEGIN PGP SIGNATURE-----')
+        findings << {
+          header: 'security.txt',
+          issue: 'security.txt is not digitally signed',
+          severity: :info,
+          recommended_fix: 'Consider signing security.txt with PGP for authenticity'
+        }
+      end
+
+      findings
+    end
 
     def validate_security_txt(content)
       findings = []

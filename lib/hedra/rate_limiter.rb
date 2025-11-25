@@ -51,10 +51,16 @@ module Hedra
     def refill_tokens
       now = Time.now
       elapsed = now - @last_refill
+      return if elapsed <= 0
 
       tokens_to_add = (elapsed / @period) * @requests
       @tokens = [@tokens + tokens_to_add, @requests].min
       @last_refill = now
+    end
+
+    def reset
+      @tokens = @requests
+      @last_refill = Time.now
     end
   end
 end
