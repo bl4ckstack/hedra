@@ -61,17 +61,22 @@ module Hedra
       }
     }.freeze
 
-    def initialize(check_certificates: true, check_security_txt: false)
+    def initialize(check_certificates: true, check_security_txt: false, check_sri: false, check_cors: true, check_protocol: true, check_ct: false, check_dns: false)
       @plugin_manager = PluginManager.new
       @scorer = Scorer.new
       @certificate_checker = check_certificates ? CertificateChecker.new : nil
       @security_txt_checker = check_security_txt ? SecurityTxtChecker.new : nil
+      @sri_checker = check_sri ? SriChecker.new : nil
+      @cors_checker = check_cors ? CorsChecker.new : nil
+      @protocol_checker = check_protocol ? ProtocolChecker.new : nil
+      @ct_checker = check_ct ? CtChecker.new : nil
+      @dns_checker = check_dns ? DnsChecker.new : nil
       @custom_rules = []
       @mutex = Mutex.new # Thread safety for custom rules
       load_custom_rules
     end
 
-    def analyze(url, headers, http_client: nil)
+    def analyze(url, headers, http_client: nil, response: nil, html_content: nil)
       normalized_headers = normalize_headers(headers)
       findings = []
 
@@ -103,6 +108,24 @@ module Hedra
 
       # Check security.txt
       findings.concat(@security_txt_checker.check(url, http_client)) if @security_txt_checker && http_client
+
+      # Check Subresource Integrity (SRI)
+      if @sri_checker
+        @sri_checker.instance_variable_set(:@http_client, http_client) if http_client
+        findings.concat(@sri_checker.check(url, html_content))
+      end
+
+      # Check CORS configuration
+      findings.concat(@cors_checker.check(normalized_headers, url)) if @cors_checker
+
+      # Check HTTP/TLS protocol versions
+      findings.concat(@protocol_checker.check(url, response)) if @protocol_checker
+
+      # Check Certificate Transparency
+      findings.concat(@ct_checker.check(url)) if @ct_checker
+
+      # Check DNS security (DNSSEC, CAA)
+      findings.concat(@dns_checker.check(url)) if @dns_checker
 
       # Calculate security score
       score = @scorer.calculate(normalized_headers, findings)

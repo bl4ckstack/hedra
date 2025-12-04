@@ -71,7 +71,8 @@ module Hedra
 
       urls.each do |url|
         response = client.get(url)
-        result = analyzer.analyze(url, response.headers.to_h)
+        headers = safe_headers_to_hash(response.headers)
+        result = analyzer.analyze(url, headers)
         current_results << result
       rescue StandardError => e
         warn "Failed to scan #{url}: #{e.message}"
@@ -177,6 +178,11 @@ module Hedra
     option :cache_ttl, type: :numeric, default: 3600, desc: 'Cache TTL in seconds'
     option :check_certificates, type: :boolean, default: true, desc: 'Check SSL certificates'
     option :check_security_txt, type: :boolean, default: false, desc: 'Check for security.txt'
+    option :check_sri, type: :boolean, default: false, desc: 'Check Subresource Integrity'
+    option :check_cors, type: :boolean, default: true, desc: 'Check CORS configuration'
+    option :check_protocol, type: :boolean, default: true, desc: 'Check HTTP/TLS protocol versions'
+    option :check_ct, type: :boolean, default: false, desc: 'Check Certificate Transparency'
+    option :check_dns, type: :boolean, default: false, desc: 'Check DNSSEC and CAA records'
     option :save_baseline, type: :string, desc: 'Save results as baseline'
     option :progress, type: :boolean, default: true, desc: 'Show progress bar'
     def scan(target) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -186,7 +192,12 @@ module Hedra
       client = build_http_client
       analyzer = Analyzer.new(
         check_certificates: options[:check_certificates],
-        check_security_txt: options[:check_security_txt]
+        check_security_txt: options[:check_security_txt],
+        check_sri: options[:check_sri],
+        check_cors: options[:check_cors],
+        check_protocol: options[:check_protocol],
+        check_ct: options[:check_ct],
+        check_dns: options[:check_dns]
       )
       cache = options[:cache] ? Cache.new(ttl: options[:cache_ttl]) : nil
       rate_limiter = options[:rate] ? RateLimiter.new(options[:rate]) : nil
@@ -211,7 +222,9 @@ module Hedra
               log_info("Cache hit: #{url}") if @verbose
             else
               response = client.get(url)
-              result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+              headers = safe_headers_to_hash(response.headers)
+              html_content = response.body.to_s if options[:check_sri]
+              result = analyzer.analyze(url, headers, http_client: client, response: response, html_content: html_content)
               cache&.set(url, result)
             end
 
@@ -246,17 +259,29 @@ module Hedra
     option :timeout, type: :numeric, aliases: '-t', default: 10, desc: 'Request timeout'
     option :check_certificates, type: :boolean, default: true, desc: 'Check SSL certificates'
     option :check_security_txt, type: :boolean, default: true, desc: 'Check for security.txt'
+    option :check_sri, type: :boolean, default: true, desc: 'Check Subresource Integrity'
+    option :check_cors, type: :boolean, default: true, desc: 'Check CORS configuration'
+    option :check_protocol, type: :boolean, default: true, desc: 'Check HTTP/TLS protocol versions'
+    option :check_ct, type: :boolean, default: true, desc: 'Check Certificate Transparency'
+    option :check_dns, type: :boolean, default: true, desc: 'Check DNSSEC and CAA records'
     def audit(url)
       setup_logging
       client = build_http_client
       analyzer = Analyzer.new(
         check_certificates: options[:check_certificates],
-        check_security_txt: options[:check_security_txt]
+        check_security_txt: options[:check_security_txt],
+        check_sri: options[:check_sri],
+        check_cors: options[:check_cors],
+        check_protocol: options[:check_protocol],
+        check_ct: options[:check_ct],
+        check_dns: options[:check_dns]
       )
 
       begin
         response = client.get(url)
-        result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+        headers = safe_headers_to_hash(response.headers)
+        html_content = response.body.to_s if options[:check_sri]
+        result = analyzer.analyze(url, headers, http_client: client, response: response, html_content: html_content)
 
         if options[:json]
           output = JSON.pretty_generate(result)
@@ -289,7 +314,8 @@ module Hedra
       loop do
         begin
           response = client.get(url)
-          result = analyzer.analyze(url, response.headers.to_h)
+          headers = safe_headers_to_hash(response.headers)
+          result = analyzer.analyze(url, headers)
           print_result(result)
         rescue StandardError => e
           log_error("Watch check failed: #{e.message}")
@@ -311,8 +337,10 @@ module Hedra
         response1 = client.get(url1)
         response2 = client.get(url2)
 
-        result1 = analyzer.analyze(url1, response1.headers.to_h)
-        result2 = analyzer.analyze(url2, response2.headers.to_h)
+        headers1 = safe_headers_to_hash(response1.headers)
+        headers2 = safe_headers_to_hash(response2.headers)
+        result1 = analyzer.analyze(url1, headers1)
+        result2 = analyzer.analyze(url2, headers2)
 
         print_comparison(result1, result2)
       rescue StandardError => e
@@ -367,7 +395,8 @@ module Hedra
 
       urls.each do |url|
         response = client.get(url)
-        result = analyzer.analyze(url, response.headers.to_h, http_client: client)
+        headers = safe_headers_to_hash(response.headers)
+        result = analyzer.analyze(url, headers, http_client: client)
         results << result
 
         if result[:score] < options[:threshold]
@@ -556,6 +585,21 @@ module Hedra
       return unless @verbose
 
       puts Pastel.new.cyan("INFO: #{message}")
+    end
+
+    def safe_headers_to_hash(headers)
+      return {} if headers.nil?
+
+      # Handle different header object types
+      hash = headers.respond_to?(:to_h) ? headers.to_h : {}
+
+      # Clean up nil values
+      hash.compact.transform_values do |value|
+        value.nil? ? '' : value
+      end
+    rescue StandardError => e
+      log_error("Failed to convert headers: #{e.message}") if @debug
+      {}
     end
 
     def severity_badge(severity)

@@ -150,6 +150,30 @@ hedra plugin remove plugin_name
 - Signature algorithm strength
 - Key size validation
 - Chain verification
+- TLS version detection (TLS 1.2/1.3)
+- Certificate Transparency log verification
+
+**Protocol Security:**
+- HTTP/2 and HTTP/3 detection
+- TLS version enforcement
+- Insecure protocol warnings
+
+**CORS Security:**
+- Access-Control-Allow-Origin validation
+- Wildcard and null origin detection
+- Credentials with wildcard prevention
+- Dangerous HTTP methods detection
+- Sensitive header exposure checks
+
+**Subresource Integrity (SRI):**
+- External script/stylesheet SRI validation
+- Crossorigin attribute verification
+- Same-origin resource detection
+
+**DNS Security:**
+- DNSSEC validation
+- CAA (Certificate Authority Authorization) records
+- DNS-based security policy enforcement
 
 **RFC 9116:**
 - security.txt file presence and format
@@ -375,11 +399,102 @@ hedra scan -f urls.txt --output report.html --format html
 
 Interactive report with sorting, filtering, and charts.
 
+## Advanced Security Checks
+
+### Subresource Integrity (SRI)
+Validates that external scripts and stylesheets use SRI attributes to prevent tampering:
+```bash
+hedra scan https://myapp.com --check-sri
+```
+
+**Checks:**
+- External resources without integrity attributes
+- Missing crossorigin attributes
+- Same-origin vs cross-origin detection
+
+### CORS Policy Analysis
+Validates Cross-Origin Resource Sharing configuration for security issues:
+```bash
+hedra scan https://api.myapp.com --check-cors
+```
+
+**Detects:**
+- Wildcard origins with credentials (critical vulnerability)
+- Null origin allowance
+- Insecure HTTP origins
+- Dangerous HTTP methods (TRACE, TRACK)
+- Overly permissive configurations
+- Sensitive header exposure
+
+### Protocol Version Detection
+Checks HTTP and TLS protocol versions:
+```bash
+hedra scan https://myapp.com --check-protocol
+```
+
+**Validates:**
+- HTTP/1.1 vs HTTP/2 vs HTTP/3
+- TLS 1.2/1.3 enforcement
+- Deprecated protocol detection (SSLv3, TLS 1.0/1.1)
+- Protocol upgrade recommendations
+
+### Certificate Transparency
+Verifies certificates are logged in CT logs:
+```bash
+hedra audit https://myapp.com --check-ct
+```
+
+**Checks:**
+- SCT (Signed Certificate Timestamp) presence
+- Multiple independent CT logs
+- SCT delivery methods (extension, OCSP, TLS)
+
+### DNS Security
+Validates DNS-level security features:
+```bash
+hedra audit https://myapp.com --check-dns
+```
+
+**Validates:**
+- DNSSEC enablement
+- CAA records for certificate issuance control
+- CAA tags (issue, issuewild, iodef)
+- DNS-based security policies
+
+### Combined Advanced Scan
+Run all advanced checks together:
+```bash
+hedra audit https://myapp.com \
+  --check-sri \
+  --check-cors \
+  --check-protocol \
+  --check-ct \
+  --check-dns \
+  --output comprehensive-report.json
+```
+
 ## Real-World Examples
 
 ### Basic Security Audit
 ```bash
 hedra scan https://myapp.com
+```
+
+### Comprehensive Security Audit with All Checks
+```bash
+hedra audit https://myapp.com \
+  --check-sri \
+  --check-ct \
+  --check-dns \
+  --json \
+  --output full-audit.json
+```
+
+### Quick CORS and Protocol Check
+```bash
+hedra scan https://api.myapp.com \
+  --check-cors \
+  --check-protocol
 ```
 
 ### Production Deployment Check
@@ -503,5 +618,3 @@ hedra scan https://slow-server.com --timeout 60
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
-
-**Built by [BlackStack](https://github.com/bl4ckstack)** • Securing the web, one header at a time.
